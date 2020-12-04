@@ -17,6 +17,33 @@ import freechips.rocketchip.regmapper._
 * Can be useful for median streaming calculation
 **/
 
+trait AXI4LISStandaloneBlock extends AXI4LISBlock[SInt] {
+  def standaloneParams = AXI4BundleParameters(addrBits = 32, dataBits = 32, idBits = 1)
+  val ioMem = mem.map { m => {
+    val ioMemNode = BundleBridgeSource(() => AXI4Bundle(standaloneParams))
+
+    m :=
+      BundleBridgeToAXI4(AXI4MasterPortParameters(Seq(AXI4MasterParameters("bundleBridgeToAXI4")))) :=
+      ioMemNode
+
+    val ioMem = InModuleBody { ioMemNode.makeIO() }
+    ioMem
+  }}
+  
+  val ioInNode = BundleBridgeSource(() => new AXI4StreamBundle(AXI4StreamBundleParameters(n = 4)))
+  val ioOutNode = BundleBridgeSink[AXI4StreamBundle]()
+
+  ioOutNode :=
+    AXI4StreamToBundleBridge(AXI4StreamSlaveParameters()) :=
+    streamNode :=
+    BundleBridgeToAXI4Stream(AXI4StreamMasterParameters(n = 4)) :=
+    ioInNode
+
+  val in = InModuleBody { ioInNode.makeIO() }
+  val out = InModuleBody { ioOutNode.makeIO() }
+}
+
+
 abstract class LISBlock [T <: Data : Real: BinaryRepresentation, D, U, E, O, B <: Data] (params: LISParams[T], beatBytes: Int) extends LazyModule()(Parameters.empty) with DspBlock[D, U, E, O, B] with HasCSR {
 
   val streamNode = AXI4StreamIdentityNode()
@@ -30,17 +57,19 @@ abstract class LISBlock [T <: Data : Real: BinaryRepresentation, D, U, E, O, B <
     // control registers
     val sortDir = RegInit(true.B)
     val flushData = RegInit(false.B)
-    val discardPos = RegInit(0.U(log2Ceil(params.LISsize).W))
-    val lisSize = RegInit(0.U(log2Ceil(params.LISsize).W))
+    val discardPos = RegInit(0.U(log2Ceil(params.LISsize + 1).W))
+    val sendOnOutput = RegInit(0.U(log2Ceil(params.LISsize + 1).W))
+    val lisSize = RegInit((params.LISsize).U(log2Ceil(params.LISsize + 1).W))
 
     // status registers
     val sorterFull = RegInit(false.B)
     val sorterEmpty = RegInit(true.B)
 
     // connect input
+    lis.io.lastIn := in.bits.last
     lis.io.in.valid := in.valid
     lis.io.in.bits := in.bits.data.asTypeOf(params.proto)
-    in.ready := lis.io.out.ready
+    in.ready := lis.io.in.ready
 
     // connect control registers
     if (params.rtcSortDir) {
@@ -55,12 +84,13 @@ abstract class LISBlock [T <: Data : Real: BinaryRepresentation, D, U, E, O, B <
     if (params.LIStype == "LIS_input") {
       lis.io.discardPos.get := discardPos
     }
-
+// Cat(outputBufferCos2.asUInt(), outputBufferSin2.asUInt())
+    
     // connect output
     out.valid := lis.io.out.valid
     lis.io.out.ready := out.ready
-    out.bits.data := lis.io.out.bits.asUInt
-
+    out.bits.data := Cat(lis.io.out.bits.asUInt, lis.io.sortedData(sendOnOutput).asUInt)
+    out.bits.last := lis.io.lastOut
     // connect status registers
     if (params.useSorterFull) {
       sorterFull := lis.io.sorterFull.get
@@ -79,6 +109,8 @@ abstract class LISBlock [T <: Data : Real: BinaryRepresentation, D, U, E, O, B <
         RegFieldDesc(name = "flushData", desc = "trigger data flushing")),
       RegField(log2Ceil(params.LISsize), discardPos,
         RegFieldDesc(name = "discardPos", desc = "defines position of the discarding element - used only if LIS_input scheme is used")),
+      RegField(log2Ceil(params.LISsize), sendOnOutput,
+        RegFieldDesc(name = "sendOnOutput", desc = "another data that should be sent on output")),
       // read-only status registers
       RegField.r(1, sorterFull,
         RegFieldDesc(name = "sorterFull", desc = "indicates whether sorter is full or not")),
@@ -100,19 +132,29 @@ class AXI4LISBlock[T <: Data : Real: BinaryRepresentation](params: LISParams[T],
 
 object LISDspBlock extends App
 {
-  val paramsLIS: LISParams[FixedPoint] = LISParams(
-    proto = FixedPoint(16.W, 14.BP),
-    LISsize = 8,
-    LIStype = "LIS_input",
-    rtcSize = false,
+//   val paramsLIS: LISParams[FixedPoint] = LISParams(
+//     proto = FixedPoint(16.W, 14.BP),
+//     LISsize = 8,
+//     LIStype = "LIS_input",
+//     rtcSize = false,
+//     sortDir = true
+//   )
+  val sorterType = "LIS_input"
+  
+  val params: LISParams[SInt] = LISParams(
+    proto = SInt(16.W),
+    LISsize = 32,
+    LIStype = sorterType,
+    discardPos = if (sorterType == "LIS_fixed") Some(8) else None,
+    useSorterEmpty = true,
+    useSorterFull = true,
+    rtcSize = true,
     sortDir = true
   )
 
   val baseAddress = 0x500
   implicit val p: Parameters = Parameters.empty
-  val lisModule = LazyModule(new AXI4LISBlock(paramsLIS, AddressSet(baseAddress + 0x100, 0xFF), _beatBytes = 4) with dspblocks.AXI4StandaloneBlock {
-    override def standaloneParams = AXI4BundleParameters(addrBits = 32, dataBits = 32, idBits = 1)
-  })
+  val lisModule = LazyModule(new AXI4LISBlock(params, AddressSet(baseAddress + 0x100, 0xFF), _beatBytes = 4) with AXI4LISStandaloneBlock)
 
   chisel3.Driver.execute(args, ()=> lisModule.module) // generate verilog code
 }
