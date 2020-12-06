@@ -31,12 +31,29 @@ abstract class StreamBIST [D, U, E, O, B <: Data] (beatBytes: Int) extends LazyM
     // Control register!
     val enable = RegInit(false.B)
     val terminate = RegInit(false.B)
+    val cntrOrLFSR = RegInit(false.B) 
+    val upOrdown = RegInit(false.B) // do not use it for know
     
-    val lfsrOn = enable && out.ready
-    val lfsr = LFSR(16, lfsrOn)
+    val bistOn = enable && out.ready
+
+    // make it configurable!
+    val lfsr = LFSR(16, bistOn && ~cntrOrLFSR)
+    // make it configurable!
+    val cnt = RegInit(0.U(8.W))
+    val cntEn = bistOn && cntrOrLFSR
+    val max = (scala.math.pow(2,8).toInt - 1).U
+    
+    // maybe not necessary
+    when (cntEn && cnt === max) {
+      cnt := 0.U
+    }
+    .elsewhen (cntEn) {
+      cnt := cnt + 1.U
+    }
+    
     // connect output
     out.valid := enable && ~terminate
-    out.bits.data := lfsr.asUInt
+    out.bits.data := Mux(cntrOrLFSR, cnt, lfsr.asUInt)
     out.bits.last := terminate // make it last one clock cycle
     
     val fields = Seq(
@@ -45,6 +62,10 @@ abstract class StreamBIST [D, U, E, O, B <: Data] (beatBytes: Int) extends LazyM
         RegFieldDesc(name = "enable", desc = "enable lfsr module")),
       RegField(1, terminate,
         RegFieldDesc(name = "terminate", desc = "terminate sending data on output, connected to output last signal")),
+      RegField(1, cntrOrLFSR,
+        RegFieldDesc(name = "cntrOrLFSR", desc = "send on output counter value or LFSR value")),
+      RegField(1, upOrdown ,
+        RegFieldDesc(name = "upOrdown", desc = "counter should count up or down"))
     )
     //define abract register map so it can be AXI4, Tilelink, APB, AHB
     regmap(
