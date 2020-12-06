@@ -37,6 +37,7 @@ trait LISTestPins extends LISTest {
   in_queue.node := BundleBridgeToAXI4Stream(AXI4StreamMasterParameters(n = 1)) := ioparallelin
   val inStream = InModuleBody { ioparallelin.makeIO() }
 }
+
 trait LISTestPinsWithLA extends LISTest {
   val beatBytes = 4
   // Generate AXI4 slave output
@@ -191,9 +192,7 @@ class LISTest(params: LISTestFixedParameters) extends LazyModule()(Parameters.em
   val lisFixed_ones  = LazyModule(new AllOnes(beatBytes = params.beatBytes))
   val lisFixed_zeros = LazyModule(new AllZeros(beatBytes = params.beatBytes))
   val lisFixed_rdy_0 = LazyModule(new AlwaysReady)
-  
-  // Here define bist module!
-  // Define what exactly that is going to do!
+
   val bist           = LazyModule(new AXI4StreamBIST(address = params.bistAddress, beatBytes = params.beatBytes))
   val bist_split     = LazyModule(new AXI4Splitter(address = params.bistSplitAddress, beatBytes = params.beatBytes))
 
@@ -232,28 +231,28 @@ class LISTest(params: LISTestFixedParameters) extends LazyModule()(Parameters.em
   // connect nodes
   in_split.streamNode  := in_adapt := in_queue.node                       // in_queue    -----> in_adapt   -----> in_split
 
-  lisFifo_mux0.streamNode := bist_split.streamNode                       // bist_split  --0--> lisFifo_mux0
+  lisFifo_mux0.streamNode := AXI4StreamBuffer() := bist_split.streamNode                       // bist_split  --0--> lisFifo_mux0
   
   lisFifo_mux0.streamNode := in_split.streamNode                         // in_split       --1--> lisFifo_mux0
-  lisFifo_mux0.streamNode := uRx_split.streamNode                        // uRx_split      --2--> lisFifo_mux0
+  lisFifo_mux0.streamNode := AXI4StreamBuffer() := uRx_split.streamNode                        // uRx_split      --2--> lisFifo_mux0
   lisFifo_mux0.streamNode := lisFifo_ones.streamNode                     // lisFifo_ones   --3--> lisFifo_mux0
   lisFifo_mux0.streamNode := lisFifo_zeros.streamNode                    // lisFifo_zeros  --4--> lisFifo_mux0
   lisFifo.streamNode       := lisFifo_mux0.streamNode                    // lisFifo_mux0  --0--> lisFifo
   lisFifo_rdy_0.streamNode := lisFifo_mux0.streamNode                    // lisFifo_mux0  --1--> lisFifo_rdy_0
 
-  lisInput_mux0.streamNode := bist_split.streamNode                      // bist_split  --0--> lisFixed_mux0
+  lisInput_mux0.streamNode := AXI4StreamBuffer() := bist_split.streamNode                      // bist_split  --0--> lisFixed_mux0
 
-  lisInput_mux0.streamNode := in_split.streamNode                        // in_split        --1--> lisInput_mux0
-  lisInput_mux0.streamNode := uRx_split.streamNode                       // uRx_split       --2--> lisInput_mux0
-  lisInput_mux0.streamNode := lisInput_ones.streamNode                   // lisInput_ones   --3--> lisInput_mux0
-  lisInput_mux0.streamNode := lisInput_zeros.streamNode                  // lisInput_zeros  --4--> lisInput_mux0
-  lisInput.streamNode       := lisInput_mux0.streamNode                  // lisInput_mux0  --0--> lisInput
-  lisInput_rdy_0.streamNode := lisInput_mux0.streamNode                  // lisInput_mux0  --1--> lisInput_rdy_0
+  lisInput_mux0.streamNode  := AXI4StreamBuffer() := in_split.streamNode                        // in_split        --1--> lisInput_mux0
+  lisInput_mux0.streamNode  := AXI4StreamBuffer() := uRx_split.streamNode                       // uRx_split       --2--> lisInput_mux0
+  lisInput_mux0.streamNode  := AXI4StreamBuffer() := lisInput_ones.streamNode                   // lisInput_ones   --3--> lisInput_mux0
+  lisInput_mux0.streamNode  := AXI4StreamBuffer() := lisInput_zeros.streamNode                  // lisInput_zeros  --4--> lisInput_mux0
+  lisInput.streamNode       := AXI4StreamBuffer() := lisInput_mux0.streamNode                   // lisInput_mux0  --0--> lisInput
+  lisInput_rdy_0.streamNode := lisInput_mux0.streamNode                   // lisInput_mux0  --1--> lisInput_rdy_0
   
-  lisFixed_mux0.streamNode := bist_split.streamNode                      // bist_split      --0--> lisFixed_mux0
+  lisFixed_mux0.streamNode := AXI4StreamBuffer() := bist_split.streamNode                      // bist_split      --0--> lisFixed_mux0
 
   lisFixed_mux0.streamNode := in_split.streamNode                        // in_split        --1--> lisFixed_mux0
-  lisFixed_mux0.streamNode := uRx_split.streamNode                       // uRx_split       --2--> lisFixed_mux0
+  lisFixed_mux0.streamNode := AXI4StreamBuffer() := uRx_split.streamNode                       // uRx_split       --2--> lisFixed_mux0
   lisFixed_mux0.streamNode := lisFixed_ones.streamNode                   // lisFixed_ones   --3--> lisFixed_mux0
   lisFixed_mux0.streamNode := lisFixed_zeros.streamNode                  // lisFixed_zeros  --4--> lisFixed_mux0
   lisFixed.streamNode       := lisFixed_mux0.streamNode                  // lisFixed_mux0  --0--> lisFixed
@@ -302,7 +301,7 @@ object LISTestApp extends App
         discardPos = None,
         useSorterEmpty = true,
         useSorterFull = true,
-        rtcSize = true,
+        rtcSize = false,
         sortDir = true
       ),
       lisInputParams = LISParams(
@@ -312,7 +311,7 @@ object LISTestApp extends App
         discardPos = None,
         useSorterEmpty = true,
         useSorterFull = true,
-        rtcSize = true,
+        rtcSize = false,
         sortDir = true
       ),
       lisFixedParams = LISParams(
@@ -322,7 +321,7 @@ object LISTestApp extends App
         discardPos = Some(8),
         useSorterEmpty = true,
         useSorterFull = true,
-        rtcSize = true,
+        rtcSize = false,
         sortDir = true
       ),
       inSplitAddress       = AddressSet(0x30000000, 0xF),
