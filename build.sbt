@@ -12,8 +12,8 @@ def scalacOptionsVersion(scalaVersion: String): Seq[String] = {
 
 def javacOptionsVersion(scalaVersion: String): Seq[String] = {
   Seq() ++ {
-    // Scala 2.12 requires Java 8, but we continue to generate
-    //  Java 7 compatible code until we need Java 8 features
+    // Scala 2.12 requires Java 8. We continue to generate
+    //  Java 7 compatible code for Scala 2.11
     //  for compatibility with old clients.
     CrossVersion.partialVersion(scalaVersion) match {
       case Some((2, scalaMajor: Long)) if scalaMajor < 12 =>
@@ -24,17 +24,30 @@ def javacOptionsVersion(scalaVersion: String): Seq[String] = {
   }
 }
 
-name := "lis"
-version := "1.0-SNAPSHOT"
-scalaVersion := "2.12.12"
-crossScalaVersions := Seq("2.12.12", "2.11.12")
-javacOptions ++= javacOptionsVersion(scalaVersion.value)
-scalacOptions ++= scalacOptionsVersion(scalaVersion.value)
+name := "lisTest"
 
-//libraryDependencies += "edu.berkeley.cs" %% "dsptools" % "1.3.1"
-libraryDependencies += "edu.berkeley.cs" %% "rocket-dsptools" % "1.2-SNAPSHOT"
-
-resolvers ++= Seq(
-  Resolver.sonatypeRepo("snapshots"),
-  Resolver.sonatypeRepo("releases")
+val commonSettings = Seq(
+  version := "1.0-SNAPSHOT",
+  scalaVersion := "2.12.12",
+  crossScalaVersions := Seq("2.12.12", "2.11.12"),
+  scalacOptions ++= scalacOptionsVersion(scalaVersion.value),
+  javacOptions ++= javacOptionsVersion(scalaVersion.value),
+  resolvers ++= Seq (
+    Resolver.sonatypeRepo("snapshots"),
+    Resolver.sonatypeRepo("releases")
+  ),
+  libraryDependencies ++= Seq(
+    "org.scalanlp" %% "breeze-viz" % "0.13.2",
+    "edu.berkeley.cs" %% "rocket-dsptools" % "1.2-SNAPSHOT"
+  )
 )
+
+lazy val uart = (project in file("utils/uart"))
+  .settings(commonSettings: _*)
+
+lazy val splitter = (project in file("utils/splitter"))
+  .settings(commonSettings: _*)
+
+lazy val lisTest = (project in file("."))
+  .dependsOn(uart, splitter)
+  .settings(commonSettings: _*)
