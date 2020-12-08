@@ -225,7 +225,7 @@ object LISTestWithLAApp extends App
       beatBytes            = 4)
 
   implicit val p: Parameters = Parameters.empty
-  val standaloneModule = LazyModule(new LISTest(params) with LISTestWithLAPins)
+  val standaloneModule = LazyModule(new LISTestWithLA(params) with LISTestPinsWithLA)
 
   chisel3.Driver.execute(Array("--target-dir", "./rtl/LISTestWithLA", "--top-name", "LISTestWithLA"), ()=> standaloneModule.module)
 }
