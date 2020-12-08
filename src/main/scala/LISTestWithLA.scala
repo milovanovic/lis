@@ -17,9 +17,9 @@ import uart._
 import splitter._
 
 
-trait LISTestPins extends LISTest {
+trait LISTestPinsWithLA extends LISTestWithLA {
   val beatBytes = 4
-    // Generate AXI4 slave output
+  // Generate AXI4 slave output
   def standaloneParams = AXI4BundleParameters(addrBits = beatBytes*8, dataBits = beatBytes*8, idBits = 1)
   val ioMem = mem.map { m => {
     val ioMemNode = BundleBridgeSource(() => AXI4Bundle(standaloneParams))
@@ -33,114 +33,28 @@ trait LISTestPins extends LISTest {
   ioStreamNode := AXI4StreamToBundleBridge(AXI4StreamSlaveParameters()) := out_adapt
   val outStream = InModuleBody { ioStreamNode.makeIO() }
 
+  // Generate AXI-stream input
   val ioparallelin = BundleBridgeSource(() => new AXI4StreamBundle(AXI4StreamBundleParameters(n = 1)))
   in_queue.node := BundleBridgeToAXI4Stream(AXI4StreamMasterParameters(n = 1)) := ioparallelin
   val inStream = InModuleBody { ioparallelin.makeIO() }
+
+  // Generate AXI-stream output for LA, input side
+  val ioLANode1 = BundleBridgeSink[AXI4StreamBundle]()
+  ioLANode1 := AXI4StreamToBundleBridge(AXI4StreamSlaveParameters()) := in_split.streamNode
+  val laInside = InModuleBody { ioLANode1.makeIO() }
+
+  // Generate AXI-stream output for LA, output side
+  val ioLANode2 = BundleBridgeSink[AXI4StreamBundle]()
+  ioLANode2 := AXI4StreamToBundleBridge(AXI4StreamSlaveParameters()) := out_split.streamNode
+  val laOutside = InModuleBody { ioLANode2.makeIO() }
 }
 
-
-// With FixedPoint data
-case class LISTestFixedParameters (
-  lisFIFOParams       : LISParams[FixedPoint],
-  lisInputParams      : LISParams[FixedPoint],
-  lisFixedParams      : LISParams[FixedPoint],
-  lisFIFOAddress       : AddressSet,
-  lisFIFOMuxAddress0  : AddressSet,
-  lisInputAddress      : AddressSet,
-  lisInputMuxAddress0 : AddressSet,
-  lisFixedAddress     : AddressSet,
-  lisFixedMuxAddress0 : AddressSet,
-  inSplitAddress      : AddressSet,
-  bistAddress         : AddressSet,
-  bistSplitAddress    : AddressSet,
-  outMuxAddress       : AddressSet,
-  outSplitAddress     : AddressSet,
-  uartParams          : UARTParams,
-  uRxSplitAddress     : AddressSet,
-  divisorInit         : Int,
-  beatBytes           : Int
-)
-
-case class LISTestSIntParameters (
-  lisFIFOParams       : LISParams[SInt],
-  lisInputParams      : LISParams[SInt],
-  lisFixedParams      : LISParams[SInt],
-  lisFIFOddress       : AddressSet,
-  lisFIFOMuxAddress0  : AddressSet,
-  lisInputddress      : AddressSet,
-  lisInputMuxAddress0 : AddressSet,
-  lisFixedAddress     : AddressSet,
-  lisFixedMuxAddress0 : AddressSet,
-  inSplitAddress      : AddressSet,
-  bistAddress         : AddressSet,
-  bistSplitAddress    : AddressSet,
-  outMuxAddress       : AddressSet,
-  outSplitAddress     : AddressSet,
-  uartParams          : UARTParams,
-  uRxSplitAddress     : AddressSet,
-  divisorInit         : Int,
-  beatBytes           : Int
-)
-
-class AllOnes(beatBytes: Int) extends LazyModule()(Parameters.empty) {
-  val streamNode = AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters( "allones", n = beatBytes)))))
-  lazy val module = new LazyModuleImp(this) {
-    val (out, _) = streamNode.out(0)
-    val data: BigInt = (0xFFFFFFFF)
-    out.valid := true.B
-    out.ready := DontCare
-    out.bits.data := -1.S((beatBytes*8).W).asUInt
-    out.bits.last := false.B
-  }
-}
-
-class AllZeros(beatBytes: Int) extends LazyModule()(Parameters.empty) {
-  val streamNode = AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters( "allzeroes", n = beatBytes)))))
-  lazy val module = new LazyModuleImp(this) {
-    val (out, _) = streamNode.out(0)
-    out.valid := true.B
-    out.ready := DontCare
-    out.bits.data := 0.U
-    out.bits.last := false.B
-  }
-}
-
-class AlwaysReady extends LazyModule()(Parameters.empty) {
-  val streamNode = AXI4StreamSlaveNode(AXI4StreamSlaveParameters())
-  lazy val module = new LazyModuleImp(this) {
-    val (in, _) = streamNode.in(0)
-    val data = RegInit(0.U(32.W))
-    in.valid := DontCare
-    in.ready := true.B
-    in.bits.data := DontCare
-    in.bits.last := DontCare
-  }
-}
-
-class StreamBuffer(params: BufferParams, beatBytes: Int) extends LazyModule()(Parameters.empty){
-  val innode  = AXI4StreamSlaveNode(AXI4StreamSlaveParameters())
-  val outnode = AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters( "buffer", n = beatBytes)))))
-  val node = NodeHandle(innode, outnode)
-
-  lazy val module = new LazyModuleImp(this) {
-    
-    val (in, _)  = innode.in(0)
-    val (out, _) = outnode.out(0)
-
-    val queue = Queue.irrevocable(in, params.depth, pipe=params.pipe, flow=params.flow)
-    out.valid := queue.valid
-    out.bits := queue.bits
-    queue.ready := out.ready
-  }
-}
-
-class LISTest(params: LISTestFixedParameters) extends LazyModule()(Parameters.empty) {
+class LISTestWithLA(params: LISTestFixedParameters) extends LazyModule()(Parameters.empty) {
 
   val in_adapt  = AXI4StreamWidthAdapter.nToOne(params.beatBytes) // 32 or 16????????
   val in_split  = LazyModule(new AXI4Splitter(address = params.inSplitAddress, beatBytes = params.beatBytes))
   val in_queue  = LazyModule(new StreamBuffer(BufferParams(1, true, true), beatBytes = 1))
 
-  
   //AXI4LISBlock
   val lisFifo       = LazyModule(new AXI4LISBlock(params.lisFIFOParams, params.lisFIFOAddress, params.beatBytes))
   val lisFifo_mux0  = LazyModule(new AXI4StreamMux(address = params.lisFIFOMuxAddress0,  beatBytes = params.beatBytes))
@@ -167,7 +81,7 @@ class LISTest(params: LISTestFixedParameters) extends LazyModule()(Parameters.em
 
   
   val out_mux   = LazyModule(new AXI4StreamMux(address = params.outMuxAddress, beatBytes = params.beatBytes))
-  //val out_split = LazyModule(new AXI4Splitter(address  = params.outSplitAddress, beatBytes = params.beatBytes))
+  val out_split = LazyModule(new AXI4Splitter(address  = params.outSplitAddress, beatBytes = params.beatBytes))
   val out_queue = LazyModule(new StreamBuffer(BufferParams(1, true, true), beatBytes = params.beatBytes))
   val out_adapt = AXI4StreamWidthAdapter.oneToN(params.beatBytes)
   val out_rdy   = LazyModule(new AlwaysReady)
@@ -189,7 +103,7 @@ class LISTest(params: LISTestFixedParameters) extends LazyModule()(Parameters.em
   })
 
   // define mem
-  lazy val blocks = Seq(in_split, lisFifo, lisFifo_mux0, lisInput, lisInput_mux0, lisFixed, lisFixed_mux0, bist, bist_split, out_mux, uart, uRx_split)
+  lazy val blocks = Seq(in_split, lisFifo, lisFifo_mux0, lisInput, lisInput_mux0, lisFixed, lisFixed_mux0, bist, bist_split, out_mux, out_split, uart, uRx_split)
   
   val bus = LazyModule(new AXI4Xbar)
   val mem = Some(bus.node)
@@ -239,8 +153,8 @@ class LISTest(params: LISTestFixedParameters) extends LazyModule()(Parameters.em
   uTx_adapt := uTx_queue.node := out_mux.streamNode                           // out_mux    --1--> uTx_queue -----> uTx_adapt  
   out_rdy.streamNode    := out_mux.streamNode                             // out_mux    --2--> out_rdy
 
-  //out_split.streamNode  := out_queue.node                                 // out_queue  ----> out_split
-  out_adapt             := out_queue.node//out_split.streamNode                           // out_split  --0-> out_adapt
+  out_split.streamNode  := out_queue.node                                 // out_queue  ----> out_split
+  out_adapt             := out_split.streamNode                           // out_split  --0-> out_adapt
 
   uRx_adapt := uart.streamNode := uTx_adapt                               // uTx_adapt  -----> uart      -----> uRx_adapt
   uRx_split.streamNode  := uRx_adapt                                      // uRx_adapt  -----> uRx_split
@@ -259,7 +173,8 @@ class LISTest(params: LISTestFixedParameters) extends LazyModule()(Parameters.em
   }
 }
 
-object LISTestApp extends App
+
+object LISTestWithLAApp extends App
 {
   val params =
     LISTestFixedParameters (
@@ -310,9 +225,9 @@ object LISTestApp extends App
       beatBytes            = 4)
 
   implicit val p: Parameters = Parameters.empty
-  val standaloneModule = LazyModule(new LISTest(params) with LISTestPins)
+  val standaloneModule = LazyModule(new LISTest(params) with LISTestWithLAPins)
 
-  chisel3.Driver.execute(Array("--target-dir", "./rtl/LISTest", "--top-name", "LISTest"), ()=> standaloneModule.module)
+  chisel3.Driver.execute(Array("--target-dir", "./rtl/LISTestWithLA", "--top-name", "LISTestWithLA"), ()=> standaloneModule.module)
 }
  
 
