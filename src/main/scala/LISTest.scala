@@ -38,7 +38,7 @@ trait LISTestPins extends LISTest {
   val inStream = InModuleBody { ioparallelin.makeIO() }
 }
 
-trait LISTestPinsWithLA extends LISTest {
+trait LISTestPinsWithLA extends LISTestWithLA {
   val beatBytes = 4
   // Generate AXI4 slave output
   def standaloneParams = AXI4BundleParameters(addrBits = beatBytes*8, dataBits = beatBytes*8, idBits = 1)
@@ -114,38 +114,38 @@ case class LISTestSIntParameters (
 )
 
 class AllOnes(beatBytes: Int) extends LazyModule()(Parameters.empty) {
-    val streamNode = AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters( "allones", n = beatBytes)))))
-    lazy val module = new LazyModuleImp(this) {
-        val (out, _) = streamNode.out(0)
-        val data: BigInt = (0xFFFFFFFF)
-        out.valid := true.B
-        out.ready := DontCare
-        out.bits.data := -1.S((beatBytes*8).W).asUInt
-        out.bits.last := false.B
-    }
+  val streamNode = AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters( "allones", n = beatBytes)))))
+  lazy val module = new LazyModuleImp(this) {
+    val (out, _) = streamNode.out(0)
+    val data: BigInt = (0xFFFFFFFF)
+    out.valid := true.B
+    out.ready := DontCare
+    out.bits.data := -1.S((beatBytes*8).W).asUInt
+    out.bits.last := false.B
+  }
 }
 
 class AllZeros(beatBytes: Int) extends LazyModule()(Parameters.empty) {
-    val streamNode = AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters( "allzeroes", n = beatBytes)))))
-    lazy val module = new LazyModuleImp(this) {
-        val (out, _) = streamNode.out(0)
-        out.valid := true.B
-        out.ready := DontCare
-        out.bits.data := 0.U
-        out.bits.last := false.B
-    }
+  val streamNode = AXI4StreamMasterNode(Seq(AXI4StreamMasterPortParameters(Seq(AXI4StreamMasterParameters( "allzeroes", n = beatBytes)))))
+  lazy val module = new LazyModuleImp(this) {
+    val (out, _) = streamNode.out(0)
+    out.valid := true.B
+    out.ready := DontCare
+    out.bits.data := 0.U
+    out.bits.last := false.B
+  }
 }
 
 class AlwaysReady extends LazyModule()(Parameters.empty) {
-    val streamNode = AXI4StreamSlaveNode(AXI4StreamSlaveParameters())
-    lazy val module = new LazyModuleImp(this) {
-        val (in, _) = streamNode.in(0)
-        val data = RegInit(0.U(32.W))
-        in.valid := DontCare
-        in.ready := true.B
-        in.bits.data := DontCare
-        in.bits.last := DontCare
-    }
+  val streamNode = AXI4StreamSlaveNode(AXI4StreamSlaveParameters())
+  lazy val module = new LazyModuleImp(this) {
+    val (in, _) = streamNode.in(0)
+    val data = RegInit(0.U(32.W))
+    in.valid := DontCare
+    in.ready := true.B
+    in.bits.data := DontCare
+    in.bits.last := DontCare
+  }
 }
 
 class StreamBuffer(params: BufferParams, beatBytes: Int) extends LazyModule()(Parameters.empty){
@@ -198,7 +198,7 @@ class LISTest(params: LISTestFixedParameters) extends LazyModule()(Parameters.em
 
   
   val out_mux   = LazyModule(new AXI4StreamMux(address = params.outMuxAddress, beatBytes = params.beatBytes))
-  val out_split = LazyModule(new AXI4Splitter(address  = params.outSplitAddress, beatBytes = params.beatBytes))
+  //val out_split = LazyModule(new AXI4Splitter(address  = params.outSplitAddress, beatBytes = params.beatBytes))
   val out_queue = LazyModule(new StreamBuffer(BufferParams(1, true, true), beatBytes = params.beatBytes))
   val out_adapt = AXI4StreamWidthAdapter.oneToN(params.beatBytes)
   val out_rdy   = LazyModule(new AlwaysReady)
@@ -220,7 +220,7 @@ class LISTest(params: LISTestFixedParameters) extends LazyModule()(Parameters.em
   })
 
   // define mem
-  lazy val blocks = Seq(in_split, lisFifo, lisFifo_mux0, lisInput, lisInput_mux0, lisFixed, lisFixed_mux0, bist, bist_split, out_mux, out_split, uart, uRx_split)
+  lazy val blocks = Seq(in_split, lisFifo, lisFifo_mux0, lisInput, lisInput_mux0, lisFixed, lisFixed_mux0, bist, bist_split, out_mux, uart, uRx_split)
   
   val bus = LazyModule(new AXI4Xbar)
   val mem = Some(bus.node)
@@ -270,8 +270,8 @@ class LISTest(params: LISTestFixedParameters) extends LazyModule()(Parameters.em
   uTx_adapt := uTx_queue.node := out_mux.streamNode                           // out_mux    --1--> uTx_queue -----> uTx_adapt  
   out_rdy.streamNode    := out_mux.streamNode                             // out_mux    --2--> out_rdy
 
-  out_split.streamNode  := out_queue.node                                 // out_queue  ----> out_split
-  out_adapt             := out_split.streamNode                           // out_split  --0-> out_adapt
+  //out_split.streamNode  := out_queue.node                                 // out_queue  ----> out_split
+  out_adapt             := out_queue.node//out_split.streamNode                           // out_split  --0-> out_adapt
 
   uRx_adapt := uart.streamNode := uTx_adapt                               // uTx_adapt  -----> uart      -----> uRx_adapt
   uRx_split.streamNode  := uRx_adapt                                      // uRx_adapt  -----> uRx_split
@@ -296,32 +296,32 @@ object LISTestApp extends App
     LISTestFixedParameters (
       lisFIFOParams = LISParams(
         proto = FixedPoint(16.W, 0.BP),
-        LISsize = 32,
+        LISsize = 24,
         LIStype = "LIS_FIFO",
         discardPos = None,
         useSorterEmpty = true,
         useSorterFull = true,
-        rtcSize = false,
+        rtcSize = true,
         sortDir = true
       ),
       lisInputParams = LISParams(
         proto = FixedPoint(16.W, 0.BP),
-        LISsize = 32,
+        LISsize = 24,
         LIStype = "LIS_input",
         discardPos = None,
         useSorterEmpty = true,
         useSorterFull = true,
-        rtcSize = false,
+        rtcSize = true,
         sortDir = true
       ),
       lisFixedParams = LISParams(
         proto = FixedPoint(16.W, 0.BP),
-        LISsize = 32,
+        LISsize = 24,
         LIStype = "LIS_fixed",
         discardPos = Some(8),
         useSorterEmpty = true,
         useSorterFull = true,
-        rtcSize = false,
+        rtcSize = true,
         sortDir = true
       ),
       inSplitAddress       = AddressSet(0x30000000, 0xF),
