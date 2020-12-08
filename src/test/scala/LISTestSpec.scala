@@ -195,28 +195,22 @@ class LISTestSpec extends FlatSpec with Matchers {
     beatBytes            = 4)
   
 
-  behavior of "BIST_LISFIFO_POUT_Spectrometer" 
-  
-  it should "work" in {
+  it should "test lisFIFO connected to bist module" in {
     val lazyDut = LazyModule(new LISTest(params) with LISTestPins)
     chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/BIST_LISFIFO_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
       c => new BIST_LISFIFO_POUT_SpectrometerTester(lazyDut, params, true)
     } should be (true)
   }
-  
-  behavior of "BIST_LISFixed_POUT_Spectrometer"
-  
-  it should "work" in {
+    
+  it should "test lisFixed connected to bist module" in {
     val lazyDut = LazyModule(new LISTest(params) with LISTestPins)
     chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/BIST_LISFixed_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
       c => new BIST_LISInput_POUT_SpectrometerTester(lazyDut, params, true)
     } should be (true)
   }
   
-  behavior of "BIST_LISInput_POUT_Spectrometer"
-  
- it should "work" in {
-    val lazyDut = LazyModule(new LISTest(params) with LISTestPins)
+ it should "test lisInput connected to bist modulet" in {
+   val lazyDut = LazyModule(new LISTest(params) with LISTestPins)
     chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/BIST_LISInput_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
       c => new BIST_LISFixed_POUT_SpectrometerTester(lazyDut, params, true)
     } should be (true)
