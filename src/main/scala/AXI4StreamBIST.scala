@@ -48,7 +48,12 @@ abstract class StreamBIST [D, U, E, O, B <: Data] (beatBytes: Int) extends LazyM
       cnt := 0.U
     }
     .elsewhen (cntEn) {
-      cnt := cnt + 1.U
+      when (upOrdown) {
+        cnt := cnt + 1.U
+      }
+      .otherwise {
+        cnt := cnt - 1.U
+      }
     }
     
     // connect output
