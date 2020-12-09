@@ -317,7 +317,7 @@ class PIN_LISFixed_POUT_SpectrometerTester
   step(1024)
 }
 
-class  extends FlatSpec with Matchers {
+class LISTestWithPINSpec extends FlatSpec with Matchers {
   implicit val p: Parameters = Parameters.empty
   
   val params =
@@ -377,14 +377,14 @@ class  extends FlatSpec with Matchers {
     } should be (true)
   }
     
-  it should "test lisFixed with parallel input (pin) and parallel output (pout)" ignore {
+  it should "test lisFixed with parallel input (pin) and parallel output (pout)" in {
     val lazyDut = LazyModule(new LISTest(params) with LISTestPins)
     chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/PIN_LISFixed_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
       c => new PIN_LISFixed_POUT_SpectrometerTester(lazyDut, params, true)
     } should be (true)
   }
   
- it should "test lisInput with parallel input (pin) and parallel output (pout)" ignore {
+ it should "test lisInput with parallel input (pin) and parallel output (pout)" in {
    val lazyDut = LazyModule(new LISTest(params) with LISTestPins)
     chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/PIN_LISInput_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
       c => new PIN_LISInput_POUT_SpectrometerTester(lazyDut, params, true)
