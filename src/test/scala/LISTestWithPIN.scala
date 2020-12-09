@@ -16,6 +16,7 @@ import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.system.BaseConfig
 
 import org.scalatest.{FlatSpec, Matchers}
+import scala.util.{Random}
 
 import uart._
 import java.io._
@@ -23,43 +24,62 @@ import java.io._
 // Initial tests, checking only whether streaming is ok or not and check splitter and mux configurations
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
-// BIST -> LISFIFO -> parallel_out
+// PIN -> LISFIFO -> parallel_out
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
-class BIST_LISFIFO_POUT_SpectrometerTester
+class PIN_LISFIFO_POUT_SpectrometerTester
 (
   dut: LISTest with LISTestPins,
   params: LISTestFixedParameters,
   silentFail: Boolean = false,
   beatBytes: Int = 4
-) extends PeekPokeTester(dut.module) with AXI4MasterModel {
+) extends PeekPokeTester(dut.module) with AXI4StreamModel with AXI4MasterModel {
   
   val mod = dut.module
   def memAXI: AXI4Bundle = dut.ioMem.get
+  val master = bindMaster(dut.inStream)
+
   val indexCell = params.lisFIFOParams.LISsize/2
   
 //   // This signals should be always ready!
 //   poke(dut.laInside.ready, true.B)
 //   poke(dut.laOutside.ready, true.B)
 //   
-  memWriteWord(params.bistAddress.base + 2*beatBytes, 0x1) // configure counter to be active
-  memWriteWord(params.bistAddress.base + 3*beatBytes, 0x1) // configure counter to be up counter
+  val inData = Seq.fill(params.lisFIFOParams.LISsize)((Random.nextInt((1<<(params.lisFIFOParams.proto.getWidth-1))*2) - (1<<(params.lisFIFOParams.proto.getWidth-1))))
+
+  // split 32 bit data to 4 bytes 
+  var dataByte = Seq[Int]()
+  for (i <- inData) {
+    // LSB byte
+    dataByte = dataByte :+ 0
+    dataByte = dataByte :+ 0
+    // MSB byte
+    dataByte = dataByte :+ ((i)        & 0xFF)
+    dataByte = dataByte :+ ((i >>> 8)  & 0xFF)
+  }
   
+    
+  val filein = new File("./test_run_dir/LISTest/PIN_LISFIFO_POUT/input.txt")
+  val win = new BufferedWriter(new FileWriter(filein))
+  
+  for (i <- 0 until dataByte.length ) {
+    win.write(f"${dataByte(i)}%02x" + "\n")
+  }
   // configure muxes so that lisFIFO is propagated to output
-  memWriteWord(params.lisFIFOMuxAddress0.base,  0x0) // output0
+  memWriteWord(params.lisFIFOMuxAddress0.base,  0x1) // output0
   memWriteWord(params.lisFIFOAddress.base + 4*beatBytes, indexCell)
-  memWriteWord(params.lisInputMuxAddress0.base + beatBytes,  0x0)
-  memWriteWord(params.lisFixedMuxAddress0.base + beatBytes,  0x0)
+  memWriteWord(params.lisInputMuxAddress0.base + beatBytes,  0x1)
+  memWriteWord(params.lisFixedMuxAddress0.base + beatBytes,  0x1)
   
  // configure fifo -> outMux
   memWriteWord(params.outMuxAddress.base, 0x0)
- // configure bist_split -> out_mux
-  memWriteWord(params.outMuxAddress.base + 2*beatBytes, 0x3)
-  
+  memWriteWord(params.outMuxAddress.base + 2*beatBytes, 0x4)
+
   poke(dut.outStream.ready, true.B)
-  // enable bist
-  memWriteWord(params.bistAddress.base, 0x1)
   
-  val counterInValues = Seq.range(0,24) // count from 0 to 128 
+  // send two sets of data
+  master.addTransactions((0 until dataByte.size).map(i => AXI4StreamTransaction(data = dataByte(i))))
+  master.addTransactions((0 until dataByte.size).map(i => AXI4StreamTransaction(data = dataByte(i))))
+  
   var outSeq = Seq[Int]()
   var fifoOut: Short = 0
   var inputSelected: Short = 0
@@ -87,11 +107,11 @@ class BIST_LISFIFO_POUT_SpectrometerTester
   
   //println(counterInValues.length.toString)
 
-  LISTesterUtils.checkError(fifoOutSeq, counterInValues)
-  LISTesterUtils.checkError(inputSelectedSeq, Seq.range(indexCell, indexCell + sorterLength))
+  //LISTesterUtils.checkError(fifoOutSeq, counterInValues)
+  //LISTesterUtils.checkError(inputSelectedSeq, Seq.range(indexCell, indexCell + sorterLength))
   
   // write output in file
-  val file = new File("./test_run_dir/LISTest/BIST_LISFIFO_POUT/data.txt")
+  val file = new File("./test_run_dir/LISTest/PIN_LISFIFO_POUT/output.txt")
   val w = new BufferedWriter(new FileWriter(file))
   for (i <- 0 until fifoOutSeq.length ) {
     w.write(f"${fifoOutSeq(i)}%04x" + f"${inputSelectedSeq(i)}%04x" + "\n")
@@ -102,43 +122,61 @@ class BIST_LISFIFO_POUT_SpectrometerTester
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
-// BIST -> LISInput -> parallel_out
+// PIN -> LISInput -> parallel_out
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
-class BIST_LISInput_POUT_SpectrometerTester
+class PIN_LISInput_POUT_SpectrometerTester
 (
   dut: LISTest with LISTestPins,
   params: LISTestFixedParameters,
   silentFail: Boolean = false,
   beatBytes: Int = 4
-) extends PeekPokeTester(dut.module) with AXI4MasterModel {
+) extends PeekPokeTester(dut.module) with AXI4StreamModel with AXI4MasterModel {
   
   val mod = dut.module
   def memAXI: AXI4Bundle = dut.ioMem.get
+  val master = bindMaster(dut.inStream)
   val indexCell = params.lisInputParams.LISsize/2
+    
 
 //   // This signals should be always ready!
 //   poke(dut.laInside.ready, true.B)
 //   poke(dut.laOutside.ready, true.B)
-//   
-  memWriteWord(params.bistAddress.base + 2*beatBytes, 0x1) // configure counter to be active
-  memWriteWord(params.bistAddress.base + 3*beatBytes, 0x1) // configure counter to be up counter
+ 
+ // generate random data but with seed don't forget that!
+  val inData = Seq.fill(params.lisInputParams.LISsize)((Random.nextInt((1<<(params.lisInputParams.proto.getWidth-1))*2) - (1<<(params.lisInputParams.proto.getWidth-1))))
   
-  memWriteWord(params.lisInputMuxAddress0.base,  0x0) // output0
+  // split 32 bit data to 4 bytes 
+  var dataByte = Seq[Int]()
+  for (i <- inData) {
+    // LSB byte
+    dataByte = dataByte :+ ((i)        & 0xFF)
+    dataByte = dataByte :+ ((i >>> 8)  & 0xFF)
+    // MSB byte
+    dataByte = dataByte :+ 0
+    dataByte = dataByte :+ 0
+  }
+  
+  val filein = new File("./test_run_dir/LISTest/PIN_LISInput_POUT/input.txt")
+  val win = new BufferedWriter(new FileWriter(filein))
+  
+  for (i <- 0 until dataByte.length ) {
+    win.write(f"${dataByte(i)}%02x" + "\n")
+  }
+  
+  memWriteWord(params.lisInputMuxAddress0.base,  0x1) // output0
   memWriteWord(params.lisInputAddress.base + 4*beatBytes, params.lisFIFOParams.LISsize/2)
-  memWriteWord(params.lisFIFOMuxAddress0.base + beatBytes,  0x0)
-  memWriteWord(params.lisFixedMuxAddress0.base + beatBytes,  0x0)
+  memWriteWord(params.lisFIFOMuxAddress0.base + beatBytes,  0x1)
+  memWriteWord(params.lisFixedMuxAddress0.base + beatBytes,  0x1)
   
- // configure fixed -> outMux
+ // configure input -> outMux
   memWriteWord(params.outMuxAddress.base, 0x1)
- // configure bist_split -> out_mux
-  memWriteWord(params.outMuxAddress.base + 2*beatBytes, 0x3)
-  
+  memWriteWord(params.outMuxAddress.base + 2*beatBytes, 0x4)
+
   poke(dut.outStream.ready, true.B)
 
-  // enable bist
-  memWriteWord(params.bistAddress.base, 0x1)
+  master.addTransactions((0 until dataByte.size).map(i => AXI4StreamTransaction(data = dataByte(i))))
+  master.addTransactions((0 until dataByte.size).map(i => AXI4StreamTransaction(data = dataByte(i))))
   
-  val counterInValues = Seq.range(0,24) // count from 0 to 128 
   var outSeq = Seq[Int]()
   var inputOut: Short = 0
   var inputSelected: Short = 0
@@ -162,11 +200,12 @@ class BIST_LISInput_POUT_SpectrometerTester
     inputSelectedSeq = inputSelectedSeq :+ inputSelected.toInt
   }
   
-  LISTesterUtils.checkError(inputOutSeq, counterInValues)
-  LISTesterUtils.checkError(inputSelectedSeq, Seq.range(indexCell, indexCell + sorterLength))
+  
+  //LISTesterUtils.checkError(inputOutSeq, counterInValues)
+  //LISTesterUtils.checkError(inputSelectedSeq, Seq.range(indexCell, indexCell + sorterLength))
    
   // write output in file
-  val file = new File("./test_run_dir/LISTest/BIST_LISInput_POUT/data.txt")
+  val file = new File("./test_run_dir/LISTest/PIN_LISInput_POUT/output.txt")
   val w = new BufferedWriter(new FileWriter(file))
   for (i <- 0 until inputOutSeq.length ) {
     w.write(f"${inputOutSeq(i)}%04x" + f"${inputSelectedSeq(i)}%04x" + "\n")
@@ -177,43 +216,64 @@ class BIST_LISInput_POUT_SpectrometerTester
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
-// BIST -> LISFixed -> parallel_out
+// PIN -> LISFixed -> parallel_out
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------
-class BIST_LISFixed_POUT_SpectrometerTester
+class PIN_LISFixed_POUT_SpectrometerTester
 (
   dut: LISTest with LISTestPins,
   params: LISTestFixedParameters,
   silentFail: Boolean = false,
   beatBytes: Int = 4
-) extends PeekPokeTester(dut.module) with AXI4MasterModel {
+) extends PeekPokeTester(dut.module) with AXI4StreamModel with AXI4MasterModel {
   
   val mod = dut.module
   def memAXI: AXI4Bundle = dut.ioMem.get
+  val master = bindMaster(dut.inStream)
+
   val outData = params.lisFixedParams.discardPos.get
   val indexCell = params.lisInputParams.LISsize/2
 
 //   // This signals should be always ready!
 //   poke(dut.laInside.ready, true.B)
 //   poke(dut.laOutside.ready, true.B)
-//   
-  memWriteWord(params.bistAddress.base + 2*beatBytes, 0x1) // configure counter to be active
-  memWriteWord(params.bistAddress.base + 3*beatBytes, 0x1) // configure counter to be up counter
+//  
+
+  val inData = Seq.fill(params.lisFixedParams.LISsize)((Random.nextInt((1<<(params.lisFixedParams.proto.getWidth-1))*2) - (1<<(params.lisFixedParams.proto.getWidth-1))))
+    // split 32 bit data to 4 bytes 
+  var dataByte = Seq[Int]()
   
-  // configure muxes so that bist splitter is propagated to output
-  memWriteWord(params.lisFixedMuxAddress0.base,  0x0) // output0
+  for (i <- inData) {
+    // LSB byte
+    dataByte = dataByte :+ ((i)        & 0xFF)
+    dataByte = dataByte :+ ((i >>> 8)  & 0xFF)
+    // MSB byte
+    dataByte = dataByte :+ 0
+    dataByte = dataByte :+ 0
+   }
+  
+  // Write input data to text file
+  // val filein = new File("./../top/dv/LISTest/linsorter/pin_lisFixed_pout/input.txt")
+  val filein = new File("./test_run_dir/LISTest/PIN_LISFixed_POUT/input.txt")
+  val win = new BufferedWriter(new FileWriter(filein))
+  
+  for (i <- 0 until dataByte.length ) {
+    win.write(f"${dataByte(i)}%02x" + "\n")
+  }
+
+  memWriteWord(params.lisFixedMuxAddress0.base,  0x1) // output0
   memWriteWord(params.lisFixedAddress.base + 4*beatBytes, params.lisFIFOParams.LISsize/2)
-  memWriteWord(params.lisFIFOMuxAddress0.base + beatBytes,  0x0)
-  memWriteWord(params.lisInputMuxAddress0.base + beatBytes,  0x0)
+  memWriteWord(params.lisFIFOMuxAddress0.base + beatBytes,  0x1)
+  memWriteWord(params.lisInputMuxAddress0.base + beatBytes,  0x1)
   
  // configure fixed -> outMux
   memWriteWord(params.outMuxAddress.base, 0x2)
- // configure bist_split -> out_mux
-  memWriteWord(params.outMuxAddress.base + 2*beatBytes, 0x3)
+
   poke(dut.outStream.ready, true.B)
-  // enable bist
-  memWriteWord(params.bistAddress.base, 0x1)
+
+  master.addTransactions((0 until dataByte.size).map(i => AXI4StreamTransaction(data = dataByte(i))))
+  master.addTransactions((0 until dataByte.size).map(i => AXI4StreamTransaction(data = dataByte(i))))
+  memWriteWord(params.outMuxAddress.base + 2*beatBytes, 0x4)
   
-  val counterInValues = Seq.range(0,24) // count from 0 to 24 
   var outSeq = Seq[Int]()
   var fixedOut: Short = 0
   var inputSelected: Short = 0
@@ -239,11 +299,12 @@ class BIST_LISFixed_POUT_SpectrometerTester
     inputSelectedSeq = inputSelectedSeq :+ inputSelected.toInt
   }
    
-  LISTesterUtils.checkError(fixedOutSeq, Seq.range(outData, outData + sorterLength))
-  LISTesterUtils.checkError(inputSelectedSeq, Seq.range(indexCell, indexCell + sorterLength)) 
+  //LISTesterUtils.checkError(fixedOutSeq, Seq.range(outData, outData + sorterLength))
+  //LISTesterUtils.checkError(inputSelectedSeq, Seq.range(indexCell, indexCell + sorterLength)) 
   
   // write output in file
-  val file = new File("./test_run_dir/LISTest/BIST_LISFixed_POUT/data.txt")
+  val file = new File("./test_run_dir/LISTest/PIN_LISFixed_POUT/output.txt")
+  
   val w = new BufferedWriter(new FileWriter(file))
   for (i <- 0 until fixedOutSeq.length) {
     w.write(f"${fixedOutSeq(i)}%04x" + f"${inputSelectedSeq(i)}%04x" + "\n")
@@ -254,7 +315,7 @@ class BIST_LISFixed_POUT_SpectrometerTester
   step(1024)
 }
 
-class LISTestWithBistSpec extends FlatSpec with Matchers {
+class LISTestWithPINSpec extends FlatSpec with Matchers {
   implicit val p: Parameters = Parameters.empty
   
   val params =
@@ -305,26 +366,26 @@ class LISTestWithBistSpec extends FlatSpec with Matchers {
     divisorInit          =  (173).toInt, // baudrate = 115200 for 20MHz
     beatBytes            = 4)
   
-
+  // check parameters inside iotester
   // For now only use verilator backend
-  it should "test lisFIFO connected to bist module and parallel output (pout)" in {
+  it should "test lisFIFO with parallel input (pin) and parallel output (pout)" in {
     val lazyDut = LazyModule(new LISTest(params) with LISTestPins)
-    chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/BIST_LISFIFO_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
-      c => new BIST_LISFIFO_POUT_SpectrometerTester(lazyDut, params, true)
+    chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/PIN_LISFIFO_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
+      c => new PIN_LISFIFO_POUT_SpectrometerTester(lazyDut, params, true)
     } should be (true)
   }
     
-  it should "test lisInput connected to bist module and parallel output (pout)" in {
+  it should "test lisFixed with parallel input (pin) and parallel output (pout)" in {
     val lazyDut = LazyModule(new LISTest(params) with LISTestPins)
-    chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/BIST_LISInput_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
-      c => new BIST_LISInput_POUT_SpectrometerTester(lazyDut, params, true)
+    chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/PIN_LISFixed_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
+      c => new PIN_LISFixed_POUT_SpectrometerTester(lazyDut, params, true)
     } should be (true)
   }
   
- it should "test lisFixed connected to bist module and parallel output (pout)" in {
+ it should "test lisInput with parallel input (pin) and parallel output (pout)" in {
    val lazyDut = LazyModule(new LISTest(params) with LISTestPins)
-    chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/BIST_LISFixed_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
-      c => new BIST_LISFixed_POUT_SpectrometerTester(lazyDut, params, true)
+    chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/PIN_LISInput_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
+      c => new PIN_LISInput_POUT_SpectrometerTester(lazyDut, params, true)
     } should be (true)
   }
 }
