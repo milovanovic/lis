@@ -19,7 +19,7 @@ class LinearSortersSpec extends FlatSpec with Matchers {
    // for (sorterType <- Seq("LIS_FIFO")) {
       for (sorterSize <- Seq(8, 24, 64)) {
         for(sortDir <- Seq(true, false)) {
-          it should f"work for UInt, sorter type $sorterType, sorter size = $sorterSize and parameter sortDir = $sortDir" in {//ignore {//in {
+          it should f"work for UInt, sorter type $sorterType, sorter size = $sorterSize and parameter sortDir = $sortDir" ignore {//ignore {//in {
             val params: LISParams[UInt] = LISParams(
               proto = UInt(16.W),
               LISsize = sorterSize,
@@ -45,7 +45,7 @@ class LinearSortersSpec extends FlatSpec with Matchers {
     for (sorterType <- Seq("LIS_fixed", "LIS_FIFO", "LIS_input")) {
       for (sorterSize <- Seq(2, 24, 32)) {
         for (sortDir <- Seq(true, false)) {
-          it should f"work for SInt, sorter type $sorterType, sorter size = $sorterSize and sortDir = $sortDir" in {
+          it should f"work for SInt, sorter type $sorterType, sorter size = $sorterSize and sortDir = $sortDir" ignore {
             val params: LISParams[SInt] = LISParams(
               proto = SInt(16.W),
               LISsize = sorterSize,
@@ -72,7 +72,7 @@ class LinearSortersSpec extends FlatSpec with Matchers {
     for (sorterType <- Seq("LIS_fixed", "LIS_FIFO", "LIS_input")) {
       for (sorterSize <- Seq(2, 24, 32)) {
         for (sortDir <- Seq(true,false)) {
-          it should f"work for FixedPoint, sorter type $sorterType, sorter size = $sorterSize and sortDir = $sortDir" in {//in {
+          it should f"work for FixedPoint, sorter type $sorterType, sorter size = $sorterSize and sortDir = $sortDir" ignore {//in {
             val params: LISParams[FixedPoint] = LISParams(
               proto = FixedPoint(16.W, 8.BP),
               LISsize = sorterSize,
@@ -99,7 +99,7 @@ class LinearSortersSpec extends FlatSpec with Matchers {
     for (sorterType <- Seq("LIS_fixed", "LIS_FIFO", "LIS_input")) {
       for (sorterSize <- Seq(2, 24, 32)) {
         for (sortDir <- Seq(true, false)) {
-          it should f"work for DspReal, sorter type $sorterType and  sorter size = $sorterSize and sortDir = $sortDir" in {//ignore {
+          it should f"work for DspReal, sorter type $sorterType and  sorter size = $sorterSize and sortDir = $sortDir" ignore {//ignore {
             val params: LISParams[DspReal] = LISParams(
               proto = DspReal(),
               LISsize = sorterSize,
@@ -125,7 +125,7 @@ class LinearSortersSpec extends FlatSpec with Matchers {
    // test run time configurability!
    for (sorterType <- Seq("LIS_fixed", "LIS_FIFO", "LIS_input")) {
       for (sorterSize <- Seq(8, 24, 32)) {
-        it should f"work for FixedPoint, sorter type $sorterType, compile sorter size = $sorterSize and rtcSize configurable sorter size" in {//in {
+        it should f"work for FixedPoint, sorter type $sorterType, compile sorter size = $sorterSize and rtcSize configurable sorter size" ignore {//in {
           val params: LISParams[FixedPoint] = LISParams(
             proto = FixedPoint(16.W, 8.BP),
             LISsize = sorterSize,
@@ -151,7 +151,7 @@ class LinearSortersSpec extends FlatSpec with Matchers {
    for (sorterType <- Seq("LIS_fixed", "LIS_FIFO", "LIS_input")) {
    //for (sorterType <- Seq("LIS_FIFO")) {
       for (sorterSize <- Seq(4, 15, 24, 32)) { // test power of 2 and non power of 2 sorter size
-        it should f"work for FixedPoint, sorter type $sorterType, compile sorter size = $sorterSize and rtcSize configurable sorting direction and sorter size" in {
+        it should f"work for FixedPoint, sorter type $sorterType, compile sorter size = $sorterSize and rtcSize configurable sorting direction and sorter size" ignore {
           val params: LISParams[FixedPoint] = LISParams(
             proto = FixedPoint(16.W, 8.BP),
             LISsize = sorterSize,
@@ -205,7 +205,7 @@ class LinearSortersSpec extends FlatSpec with Matchers {
     for (sorterType <- Seq("LIS_FIFO", "LIS_fixed", "LIS_input")) {
       for (sorterSize <- Seq(2, 4, 24, 32)) {
         for (sortDir <- Seq(true, false)) {
-          it should f"work for FixedPoint, sorter type $sorterType, sorter size = $sorterSize, sortDir = $sortDir and with lastIn/ lastOut" in {
+          it should f"work for FixedPoint, sorter type $sorterType, sorter size = $sorterSize, sortDir = $sortDir and with lastIn/ lastOut" ignore {
             val params: LISParams[FixedPoint] = LISParams(
               proto = FixedPoint(16.W, 8.BP),
               LISsize = sorterSize,

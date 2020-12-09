@@ -63,7 +63,7 @@ class AXI4LISBlockSpec extends FlatSpec with Matchers {
   val lisAddress = AddressSet(baseAddress + 0x100, 0xFF)
   implicit val p: Parameters = Parameters.empty
   
-  it should "test lis core" in {
+  it should "test lis core" ignore {
     val lisModule = LazyModule(new AXI4LISBlock(params, lisAddress, _beatBytes = 4) with AXI4LISStandaloneBlock)
     chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv"), () => lisModule.module) {
       c => new AXI4LISBlockTester(lisModule, params, lisAddress, beatBytes)
