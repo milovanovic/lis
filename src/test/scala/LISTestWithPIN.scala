@@ -64,6 +64,7 @@ class PIN_LISFIFO_POUT_SpectrometerTester
   for (i <- 0 until dataByte.length ) {
     win.write(f"${dataByte(i)}%02x" + "\n")
   }
+  win.close
   // configure muxes so that lisFIFO is propagated to output
   memWriteWord(params.lisFIFOMuxAddress0.base,  0x1) // output0
   memWriteWord(params.lisFIFOAddress.base + 4*beatBytes, indexCell)
@@ -162,6 +163,7 @@ class PIN_LISInput_POUT_SpectrometerTester
   for (i <- 0 until dataByte.length ) {
     win.write(f"${dataByte(i)}%02x" + "\n")
   }
+  win.close
   
   memWriteWord(params.lisInputMuxAddress0.base,  0x1) // output0
   memWriteWord(params.lisInputAddress.base + 4*beatBytes, params.lisFIFOParams.LISsize/2)
@@ -259,7 +261,7 @@ class PIN_LISFixed_POUT_SpectrometerTester
   for (i <- 0 until dataByte.length ) {
     win.write(f"${dataByte(i)}%02x" + "\n")
   }
-
+  win.close
   memWriteWord(params.lisFixedMuxAddress0.base,  0x1) // output0
   memWriteWord(params.lisFixedAddress.base + 4*beatBytes, params.lisFIFOParams.LISsize/2)
   memWriteWord(params.lisFIFOMuxAddress0.base + beatBytes,  0x1)
@@ -315,7 +317,7 @@ class PIN_LISFixed_POUT_SpectrometerTester
   step(1024)
 }
 
-class LISTestWithPINSpec extends FlatSpec with Matchers {
+class  extends FlatSpec with Matchers {
   implicit val p: Parameters = Parameters.empty
   
   val params =
@@ -375,14 +377,14 @@ class LISTestWithPINSpec extends FlatSpec with Matchers {
     } should be (true)
   }
     
-  it should "test lisFixed with parallel input (pin) and parallel output (pout)" in {
+  it should "test lisFixed with parallel input (pin) and parallel output (pout)" ignore {
     val lazyDut = LazyModule(new LISTest(params) with LISTestPins)
     chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/PIN_LISFixed_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
       c => new PIN_LISFixed_POUT_SpectrometerTester(lazyDut, params, true)
     } should be (true)
   }
   
- it should "test lisInput with parallel input (pin) and parallel output (pout)" in {
+ it should "test lisInput with parallel input (pin) and parallel output (pout)" ignore {
    val lazyDut = LazyModule(new LISTest(params) with LISTestPins)
     chisel3.iotesters.Driver.execute(Array("-tiwv", "-tbn", "verilator", "-tivsuv", "--target-dir", "test_run_dir/LISTest/PIN_LISInput_POUT", "--top-name", "LISTest"), () => lazyDut.module) {
       c => new PIN_LISInput_POUT_SpectrometerTester(lazyDut, params, true)
