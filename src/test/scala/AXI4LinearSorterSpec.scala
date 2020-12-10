@@ -41,8 +41,6 @@ class AXI4LISBlockTester
 
 }
 
-
-
 class AXI4LISBlockSpec extends FlatSpec with Matchers {
  
  val sorterType = "LIS_FIFO"
