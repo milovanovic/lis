@@ -1,4 +1,5 @@
-// See LICENSE for license details.
+// SPDX-License-Identifier: Apache-2.0
+
 package uart
 
 import freechips.rocketchip.diplomaticobjectmodel.model.{OMDevice, OMInterrupt, OMMemoryRegion}
