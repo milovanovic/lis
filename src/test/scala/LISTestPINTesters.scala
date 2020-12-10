@@ -107,9 +107,8 @@ class PIN_LISFIFO_POUT_SpectrometerTester
   // write output in file
   val file = new File("./test_run_dir/LISTest/PIN_LISFIFO_POUT/output.txt")
   val w = new BufferedWriter(new FileWriter(file))
-  for (i <- 0 until fifoOutSeq.length) {
-    w.write(f"${fifoOutSeq(i).toShort}%04x" + f"${inputSelectedSeq(i).toShort}%04x" + "\n")
-    //w.write(f"${fifoOutSeq(i)}%04x" + f"${inputSelectedSeq(i)}%04x" + "\n")
+  for (i <- 0 until outSeq.length ) {
+    w.write(f"${outSeq(i)}%02x" + "\n")
   }
   w.close
   
@@ -222,9 +221,8 @@ class PIN_LISInput_POUT_SpectrometerTester
   // write output in file
   val file = new File("./test_run_dir/LISTest/PIN_LISInput_POUT/output.txt")
   val w = new BufferedWriter(new FileWriter(file))
-  for (i <- 0 until inputOutSeq.length) {
-    w.write(f"${inputOutSeq(i).toShort}%04x" + f"${inputSelectedSeq(i).toShort}%04x" + "\n")
-    //w.write(f"${inputOutSeq(i)}%04x" + f"${inputSelectedSeq(i)}%04x" + "\n")
+  for (i <- 0 until outSeq.length ) {
+    w.write(f"${outSeq(i)}%02x" + "\n")
   }
   w.close
   
@@ -336,9 +334,8 @@ class PIN_LISFixed_POUT_SpectrometerTester
   val file = new File("./test_run_dir/LISTest/PIN_LISFixed_POUT/output.txt")
   
   val w = new BufferedWriter(new FileWriter(file))
-  for (i <- 0 until fixedOutSeq.length) {
-    w.write(f"${fixedOutSeq(i).toShort}%04x" + f"${inputSelectedSeq(i).toShort}%04x" + "\n")
-    //w.write(f"${fixedOutSeq(i)}%04x" + f"${inputSelectedSeq(i)}%04x" + "\n")
+  for (i <- 0 until outSeq.length ) {
+    w.write(f"${outSeq(i)}%02x" + "\n")
   }
   w.close
   

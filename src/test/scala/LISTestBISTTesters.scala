@@ -82,7 +82,7 @@ class BIST_LISFIFO_POUT_SpectrometerTester
   LISTesterUtils.checkError(inputSelectedSeq, Seq.range(indexCell, indexCell + sorterLength), 0)
   
   // write output in file
-  val file = new File("./../top/dv/LISTest/lis/BIST_LISFIFO_POUT/GoldenData.txt")
+  val file = new File("./test_run_dir/LISTest/BIST_LISFIFO_POUT/output.txt")
   val w = new BufferedWriter(new FileWriter(file))
   for (i <- 0 until outSeq.length ) {
     w.write(f"${outSeq(i)}%02x" + "\n")
@@ -157,7 +157,7 @@ class BIST_LISInput_POUT_SpectrometerTester
   LISTesterUtils.checkError(inputSelectedSeq, Seq.range(indexCell, indexCell + sorterLength), 0)
    
   // write output in file
-  val file = new File("./../top/dv/LISTest/lis/BIST_LISInput_POUT/GoldenData.txt")
+  val file = new File("./test_run_dir/LISTest/BIST_LISInput_POUT/output.txt")
   val w = new BufferedWriter(new FileWriter(file))
   for (i <- 0 until outSeq.length ) {
     w.write(f"${outSeq(i)}%02x" + "\n")
@@ -234,7 +234,7 @@ class BIST_LISFixed_POUT_SpectrometerTester
   LISTesterUtils.checkError(inputSelectedSeq, Seq.range(indexCell, indexCell + sorterLength), 0)
   
   // write output in file
-  val file = new File("./../top/dv/LISTest/lis/BIST_LISFixed_POUT/GoldenData.txt")
+  val file = new File("./test_run_dir/LISTest/BIST_LISFixed_POUT/output.txt")
   val w = new BufferedWriter(new FileWriter(file))
   for (i <- 0 until outSeq.length ) {
     w.write(f"${outSeq(i)}%02x" + "\n")
