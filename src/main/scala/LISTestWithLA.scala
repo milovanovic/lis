@@ -204,7 +204,7 @@ object LISTestWithLAApp extends App
         proto = FixedPoint(16.W, 0.BP),
         LISsize = 24,
         LIStype = "LIS_fixed",
-        discardPos = Some(8),
+        discardPos = Some(12),
         useSorterEmpty = true,
         useSorterFull = true,
         rtcSize = true,
