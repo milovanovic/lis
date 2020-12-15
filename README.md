@@ -7,8 +7,6 @@ A Linear Insertion Sorter (LIS) Chisel Generator
 
 This repository contains a generator of parameterizable and runtime reconfigurable fully streaming linear insertion sorters writen in [Chisel ](http://www.chisel-lang.org) hardware design language. Fully streaming linear sorters with their rather simple and low-cost hardware architecture are widely used as the fundamental building blocks in many digital signal processing applications that require sorting operations and continuous data streaming interface.
 
-[comment]: <> (To make a Chisel project and include LIS generator, an open source starter template Chipyard Framework can be used.)
-
 ### Linear streaming sorters
 
 Linear insertion sorters use the same principle as the well- known insertion sort algorithm. The incoming data are inserted at the appropriate location inside the sorting array thus keeping the array sorted at every moment.
@@ -23,6 +21,7 @@ Previously explained generator is described with following Scala files available
 * `PE.scala` - contains description of the basic processing element (PE)
 * `LinearSorter.scala` - contains parameter description and top level modul `LinearSorter`
 
+### Interface of the module LinearSorter
 #### Inputs
 
 [Decoupled](http://github.com/freechipsproject/chisel3/wiki/Interfaces-Bulk-Connections) interface is used where .bits are data that should be sorted.
@@ -72,6 +71,19 @@ The explanation of each parameter is given below:
 * `flushData` - include flushing data functionality
 * `sortDir` - used to define sorting direction (`true` denotes ascending, `false` denotes descending sorting direction)
 
+## LisTest 
+
+Module `LisTest`decribed inside `LISTest.scala`, which block scheme is depicted in the figure below, contains:
+* All three types of `LinearSorters` (`LIS_FIFO`, `LIS_Fixed`, `LIS_Input`) wrapped as generic DSP block (chisel code available inside `LISDspBlock.scala`) in a diplomatic interface which is actually AXI4-stream for inputs and outputs and optional memory-mapped bus (TileLink, AXI4, APB or AHB) for control and status registers. 
+* BIST module with simple counter which can count up or down and LFSR module already available inside [Chisel3 library](https://www.chisel-lang.org/api/latest/chisel3/util/random/LFSR.html). BIST module description is given inside `AXI4StreamBIST.scala`.
+* UART transmitter and UART receiver  written in Chisel3 (available inside directory `utils/uart`) and mostly taken from [sifive-blocks](https://github.com/sifive/sifive-blocks/tree/master/src/main/scala/devices/uart ) .
+* A lot of AXI4 stream splitters  (check `utils/splitter`) 
+* A lot of AXI4 stream multiplexers, AXI4 stream adapters and AXI4/AXI4 stream buffers are extensively used, which together with AXI4 stream splitters make easier to test whole system. Those modules are available inside [rocket](https://github.com/ucb-bar/dsptools/tree/master/rocket/src/main/scala/amba/axi4stream) directory of the dsptools library.
+![LIS test block scheme](./doc/images/LISTest.svg)
+
+Parameters for all three types of the linear sorters, as well as address space for each module, are given inside case class `LISTestFixedParameters` (if data type (`proto`) is `FixedPoint`)  or `LISTestSIntParameters` (if data type (`proto`) is `SInt`). 
+
+
 ## Prerequisites
 
 The following software packages should be installed prior to running this project:
@@ -80,23 +92,62 @@ The following software packages should be installed prior to running this projec
 
 ## Setup
 
-Clone this repository, switch directory and run tests:
+### Generate verilog
+Clone this repository (be sure that current branch is lisTest), switch directory:
+```
+git clone https://github.com/milovanovic/lis.git
+cd lis
+```
+Almost every module described inside `src/main/scala` at the end of the scala file contains   following object used for verilog generation:
+```
+object ModuleNameApp extends App {
+  // define parameters of the module
+  val params = ... 
+  
+  // generate verilog code of the module with parameters described inside params
+  chisel3.Driver.execute(args,()=>new ModuleName(params))
+  
+  // or use new chisel3 command which uses *ChiselStage
+  (new chisel3.stage.ChiselStage).execute(
+    Array("-X", "verilog"),
+    Seq(ChiselGeneratorAnnotation(() => new ModuleName(params))))
+}
+```
+**Note**: *[ChiselStage](https://www.chisel-lang.org/api/3.3.2/chisel3/stage/ChiselStage.html)
 
+To run specific `App`  and generate verilog, type in your console next command:
+```
+sbt "runMain lis.ModuleNameApp"
+```
+By selecting specific options inside chisel3 driver or stage, user can customize exact directory where verilog code is going to be generated. 
+
+### Running tests
+If user wants only to check tests,  in that case,  clone this repository, switch directory and run all tests:
 ```
 git clone https://github.com/milovanovic/lis.git
 cd lis
 sbt test
 ```
-
+### Travis
+Each new commit execute `sbt test` command inside Travis CI.
 ## Tests
 
-To run all tests written in Scala simulation environment a user should execute the following command: `testOnly lis.LinearSortersSpec`. Various test cases can be found in `LinearTestersSpec.scala` which is available inside `src/test/scala` directory. Two linear insertion sorter testers are accessible inside `LinearTesters.scala`:
+Various test cases for testing linear insertion sorters can be found in `LinearSorterSpec.scala`  and `LISTestSpec.scala`. Those files are available inside `src/test/scala` directory.
+* `LinearTestersSpec`- test all three types of LIS, switch many parameters.  Report, received  after running those tests,  explains in a quite good way all test cases.
+* `LISTestSpec` - test `LISTest` module. 
+
+To run  only tests written inside `LISTestSpec`, execute the following command: `sbt "testOnly lis.LISTestSpec"`. 
+
+Two testers, used for test cases described inside `LinearTestersSpec`are written inside `LinearTesters.scala`:
 * `LinearSorterTester` - used for testing design when only compile time configurable parameters are active.
 * `LinearSorterTesterRunTime`  - used for testing proposed design when run time configurable parameters are included.
+ 
+ Testers `LISTestPINTesters` and `LISTestBISTTesters` test `LISTest` module . Those testers use `AXI4MasterModel` and `AXI4StreamModel` for proper register initialization and streaming transactions generation.
 
 Tester functions such as `peek`, `poke` and `except`, available inside `DspTester` (check [dsptools Chisel library](http://github.com/ucb-bar/dsptools)), are extensively used for design testing.
 
 ----------
 
 This code is maintained by Marija Petrović and Vladimir Milovanović. Please let us know if you have any questions/feedback!
+
 
