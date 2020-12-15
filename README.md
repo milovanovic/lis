@@ -80,9 +80,7 @@ Module `LisTest`decribed inside `LISTest.scala` contains:
 * A lot of AXI4-stream splitters (check `utils/splitter`).
 * A lot of AXI4-stream multiplexers, AXI4-stream adapters and AXI4/AXI4-stream buffers are extensively used, which together with AXI4-stream splitters make easier to test whole system. Those modules are available inside [rocket](https://github.com/ucb-bar/dsptools/tree/master/rocket/src/main/scala/amba/axi4stream) directory of the dsptools library.
 
-<p align=”center”>
-<img src="./doc/images/LISTest.svg" width="200%" height="100%"> 
-</p>
+![Block scheme of LISTest module](./doc/images/LISTest.svg)
 
 Parameters for all three types of the linear sorters, as well as address space for each module, are given inside case class `LISTestFixedParameters` (if data type (`proto` inside parameter list) is `FixedPoint`)  or `LISTestSIntParameters` (if data type (`proto` inside parameter list) is `SInt`).
 
