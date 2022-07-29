@@ -1,7 +1,8 @@
+
 A Linear Insertion Sorter (LIS) Chisel Generator
 ================================================
 
-[![Build Status](https://travis-ci.org/milovanovic/lis.svg?branch=master)](https://travis-ci.org/milovanovic/lis)
+[![Build Status](https://travis-ci.com/milovanovic/lis.svg?branch=master)](https://travis-ci.com/milovanovic/lis)
 
 ## Overview
 
@@ -19,9 +20,13 @@ The linear insertion sorter is composed of basic processing elements (PEs) conne
 Previously explained generator is described with following Scala files available inside`src/main/scala` directory:
 
 * `LIS_util.scala` - contains useful objects such as `CounterWithReset` and `LifeCounter`
-* `ControlLogic.scala`- contains description of Control Logic block 
-* `PE.scala` - contains description of the basic processing element (PE)
-* `LinearSorter.scala` - contains parameter description and top level modul `LinearSorter`
+* `ControlLogic.scala`- description of Control Logic block used inside each `PEcnt` module
+* `PEcnt.scala` - description of the basic processing element (PE) for the `LIS_CNT` sorter type
+* `PEsr.scala` - description of the basic processing element (PE) for the `LIS_SR` sorter type
+* `LinearSorterCNT.scala` -  description of module `LinearSorterCNT`
+* `LinearSorterSR.scala` -  description of module `LinearSorterSR`
+* `LISNetworkSR.scala` - connects all processing elements `PEcnt`
+* `LinearSorter.scala` - contains parameters description and top level modul `LinearSorter`
 
 #### Inputs
 
@@ -46,7 +51,8 @@ Design parameters are defined inside `case class LISParams`. Users can customize
     case class LISParams[T <: Data: Real](
       proto: T,
       LISsize: Int = 16,
-      LIStype: String = "LIS_FIFO",
+      LIStype: String = "LIS_CNT",
+      LISsubType: String = "LIS_FIFO",
       rtcSize: Boolean = false,
       rtcSortDir: Boolean = false,
       discardPos: Option[Int] = None,
@@ -54,13 +60,14 @@ Design parameters are defined inside `case class LISParams`. Users can customize
       useSorterEmpty: Boolean = false,
       flushData: Boolean = false,
       sortDir: Boolean = true,
-    ) { . . . 
+    ) { . . .
     }
 
 The explanation of each parameter is given below:
 * `proto:` represents type of the sorted data. Users can choose among following Chisel types: `UInt`, `SInt`, `FixedPoint`, `DspReal`. Type `DspReal`is used to make golden model of the digital design.
 * `LISsize:` is sorter size and it is not limited to be a power of 2
 * `LIStype:` used to define linear insertion sorter type
+* `LISsubType:` used to define linear insertion sorter subtype
   * Fixed discarding element position scheme - `"fixed"`
   * Fifo based scheme -  `"FIFO"`
   * Input selected discarding element position scheme - `"input"`
