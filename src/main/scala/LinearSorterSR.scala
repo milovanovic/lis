@@ -96,12 +96,18 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
   cntOutDataWire := cntOutData
   val fireLastIn = io.lastIn && io.in.fire()
 
+  val inputData = Wire(io.in.bits.cloneType)
+  if (params.LISsubType != "LIS_FIFO")
+    inputData := Mux(state_next =/= sFlush, io.in.bits, sortedDataExt(lisSizeReg-1.U))
+  else
+    inputData := io.in.bits
+
   val LISnetworkSR = Module(new LISNetworkSR(params))
   if (params.rtcSortDir) {
     LISnetworkSR.io.sortDir.get := io.sortDir.get
   }
   LISnetworkSR.io.data_rm := lose_data
-  LISnetworkSR.io.data_insert := io.in.bits
+  LISnetworkSR.io.data_insert := inputData //io.in.bits
   when (state =/= sIdle || (state === sIdle && io.in.fire())) {
     sortedDataExt := LISnetworkSR.io.nextSortedData
   }
@@ -129,13 +135,7 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
     }
   }
   state := state_next
-  val inputData = Wire(io.in.bits.cloneType)
 
-  if (params.LISsubType != "LIS_FIFO")
-  // if state is sFlush then always insert smallest or largest number depending on sorting direction
-    inputData := Mux(state_next =/= sFlush, io.in.bits, sortedDataExt(lisSizeReg-1.U))
-  else
-    inputData := io.in.bits
 
   if (params.useSorterFull) {
     io.sorterFull.get := initialInDone && state =/= sFlush
@@ -147,8 +147,8 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
   io.sortedData := sortedDataExt.take(params.LISsize)
   if (params.LISsubType == "LIS_FIFO")
     io.out.bits := outDataFifo.get //sortedDataExt(0) // send the largest data to the output
-  else if (params.LISsubType == "LIS_fixed")
-    io.out.bits := sortedDataExt(params.discardPos.get)
+  else //if (params.LISsubType == "LIS_fixed")
+    io.out.bits := sortedDataExt(io.discardPos.getOrElse(params.discardPos.get.U))
   io.lastOut  := cntOutDataWire === (lisSizeReg-1.U)
   io.in.ready := ~initialInDone || io.out.ready && state =/= sFlush
   io.out.valid := initialInDone && io.in.valid || state === sFlush //initialInDone && RegNext(io.in.valid) || state === sFlush
