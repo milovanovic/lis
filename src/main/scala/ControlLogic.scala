@@ -17,7 +17,7 @@ class PEControlLogicIO extends Bundle {
   val rstPEregs = Output(Bool())
 }
 
-class PEControlLogic extends Module {
+class PEcntControlLogic extends Module {
   val io = IO(new PEControlLogicIO)
 
   val load = Wire(Bool())

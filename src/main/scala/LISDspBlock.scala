@@ -25,7 +25,7 @@ abstract class LISBlock [T <: Data : Real: BinaryRepresentation, D, U, E, O, B <
     val (in, _)  = streamNode.in(0)
     val (out, _) = streamNode.out(0)
 
-    val lis = Module(new LinearSorter(params))
+    val lis = Module(new LinearSorterCNT(params))
 
     // control registers
     val sortDir = RegInit(true.B)
@@ -52,7 +52,7 @@ abstract class LISBlock [T <: Data : Real: BinaryRepresentation, D, U, E, O, B <
     if (params.flushData == true) {
       lis.io.flushData.get := flushData
     }
-    if (params.LIStype == "LIS_input") {
+    if (params.LISsubType == "LIS_input") {
       lis.io.discardPos.get := discardPos
     }
 
@@ -103,7 +103,7 @@ object LISDspBlock extends App
   val paramsLIS: LISParams[FixedPoint] = LISParams(
     proto = FixedPoint(16.W, 14.BP),
     LISsize = 8,
-    LIStype = "LIS_input",
+    LISsubType = "LIS_input",
     rtcSize = false,
     sortDir = true
   )

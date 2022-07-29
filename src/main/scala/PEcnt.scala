@@ -5,31 +5,31 @@ import chisel3.util._
 import dsptools.numbers._
 import chisel3.experimental.FixedPoint
 
-class PEmembers [T <: Data: Real] (proto: T, sorterSize: Int) extends Bundle {
+class PEcntMembers [T <: Data: Real] (proto: T, sorterSize: Int) extends Bundle {
   val data =    proto
   val lifeCNT = UInt(log2Up(sorterSize).W)
   val compRes = Bool()
-  override def cloneType: this.type = PEmembers(proto, sorterSize).asInstanceOf[this.type] // must have cloneType
+  override def cloneType: this.type = PEcntMembers(proto, sorterSize).asInstanceOf[this.type] // must have cloneType
 }
 
-object PEmembers {
-  def apply[T <: Data: Real] (proto: T, sorterSize: Int): PEmembers[T] = new PEmembers(proto, sorterSize)
+object PEcntMembers {
+  def apply[T <: Data: Real] (proto: T, sorterSize: Int): PEcntMembers[T] = new PEcntMembers(proto, sorterSize)
 }
 
 //Both compile and run time configurable!
-class PEIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
+class PEcntIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
   //must have proto.cloneType instead of proto!!!!
   val enableSort = Input(Bool())
   val state = Input(UInt(2.W))
 
-  val leftNBR = Input(PEmembers(params.proto.cloneType, params.LISsize))
-  val rightNBR = Input(PEmembers(params.proto.cloneType, params.LISsize))
-  val currCell = Output(PEmembers(params.proto.cloneType, params.LISsize))
+  val leftNBR = Input(PEcntMembers(params.proto.cloneType, params.LISsize))
+  val rightNBR = Input(PEcntMembers(params.proto.cloneType, params.LISsize))
+  val currCell = Output(PEcntMembers(params.proto.cloneType, params.LISsize))
 
   val lisSize = if (params.rtcSize == true) Some(Input(UInt((log2Up(params.LISsize)+1).W))) else None
   val lastCell = if (params.rtcSize) Some(Input(Bool())) else None
   val active = if (params.rtcSize) Some(Input(Bool())) else None
-  val discard = if (params.LIStype == "LIS_input" || params.LIStype == "LIS_fixed")  Some(Input(Bool())) else None
+  val discard = if (params.LISsubType == "LIS_input" || params.LISsubType == "LIS_fixed")  Some(Input(Bool())) else None
   val sortDir = if (params.rtcSortDir) Some(Input(Bool())) else None
 
   val inData = Input(params.proto.cloneType)
@@ -40,17 +40,17 @@ class PEIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
   val currDiscard = Output(Bool())
   val toLeftPropDiscard = Output(Bool())
 
-  override def cloneType: this.type = PEIO(params).asInstanceOf[this.type]
+  override def cloneType: this.type = PEcntIO(params).asInstanceOf[this.type]
 }
 
-object PEIO {
-  def apply[T <: Data : Real](params: LISParams[T]): PEIO[T] = new PEIO(params)
+object PEcntIO {
+  def apply[T <: Data : Real](params: LISParams[T]): PEcntIO[T] = new PEcntIO(params)
 }
 
-class PE [T <: Data: Real] (val params: LISParams[T], index: Int) extends Module {
-  val io = IO(PEIO(params))
+class PEcnt [T <: Data: Real] (val params: LISParams[T], index: Int) extends Module {
+  val io = IO(PEcntIO(params))
 
-  val ctrlLogic = Module(new PEControlLogic)
+  val ctrlLogic = Module(new PEcntControlLogic)
 
   if (index == 0) {
     ctrlLogic.io.leftCompOut := true.B
@@ -158,7 +158,7 @@ class PE [T <: Data: Real] (val params: LISParams[T], index: Int) extends Module
   }
 
   // code below can be also reduced!
-  if (params.LIStype == "LIS_FIFO") {
+  if (params.LISsubType == "LIS_FIFO") {
     ctrlLogic.io.currDiscard := discard
     io.currDiscard := discard
     io.currCell.lifeCNT := cntLife
@@ -170,14 +170,14 @@ class PE [T <: Data: Real] (val params: LISParams[T], index: Int) extends Module
   }
 }
 
-object PEApp extends App
+object PEcntApp extends App
 {
   val params: LISParams[FixedPoint] = LISParams(
     proto = FixedPoint(16.W, 14.BP),
     LISsize = 64,
-    LIStype = "LIS_FIFO",
+    LISsubType = "LIS_FIFO",
     rtcSize = false,
     sortDir = true
   )
-  chisel3.Driver.execute(args,()=>new PE(params, 2))
+  chisel3.Driver.execute(args,()=>new PEcnt(params, 2))
 }

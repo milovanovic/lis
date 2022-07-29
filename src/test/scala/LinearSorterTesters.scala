@@ -6,7 +6,7 @@ import dsptools.numbers._
 import scala.util.{Random, Sorting}
 import scala.collection.mutable.ArrayBuffer
 
-class LinearSorterTesterTestLastIn[T <: Data](dut: LinearSorter[T], in: Seq[Double], tol: Int) extends DspTester(dut) {
+class LinearSorterTesterTestLastIn[T <: Data](dut: LinearSorterCNT[T], in: Seq[Double], tol: Int) extends DspTester(dut) {
   
   def expect_sorted_seq[T <: Data](sig_vec: Vec[T], exp_seq: Seq[Double], tol: Int) {
     sig_vec(0).cloneType match {
@@ -31,11 +31,11 @@ class LinearSorterTesterTestLastIn[T <: Data](dut: LinearSorter[T], in: Seq[Doub
     poke(dut.io.in.valid, 0)
     step(2)
 
-    if (dut.params.LIStype == "LIS_input") {
+    if (dut.params.LISsubType == "LIS_input") {
       discardPos = dut.params.LISsize/2
       poke(dut.io.discardPos.get, discardPos)
     }
-    else if (dut.params.LIStype == "LIS_fixed") {
+    else if (dut.params.LISsubType == "LIS_fixed") {
       discardPos = dut.params.discardPos.get
     }
     step(2)
@@ -54,7 +54,7 @@ class LinearSorterTesterTestLastIn[T <: Data](dut: LinearSorter[T], in: Seq[Doub
       }
       if (peek(dut.io.out.valid)) {
         tmpData = peek(dut.io.out.bits)
-        if (dut.params.LIStype == "LIS_FIFO") {
+        if (dut.params.LISsubType == "LIS_FIFO") {
           dut.params.proto match {
             case dspR: DspReal => realTolDecPts.withValue(tol) { expect(dut.io.out.bits, in(out.length)) }
             case _ =>  fixTolLSBs.withValue(tol) { expect(dut.io.out.bits, in(out.length)) }
@@ -78,7 +78,7 @@ class LinearSorterTesterTestLastIn[T <: Data](dut: LinearSorter[T], in: Seq[Doub
   }
 }
 
-class LinearSorterTester[T <: Data](dut: LinearSorter[T], in: Seq[Double], tol: Int) extends DspTester(dut) {
+class LinearSorterTester[T <: Data](dut: LinearSorterCNT[T], in: Seq[Double], tol: Int) extends DspTester(dut) {
   
   def expect_sorted_seq[T <: Data](sig_vec: Vec[T], exp_seq: Seq[Double], tol: Int) {
     sig_vec(0).cloneType match {
@@ -105,11 +105,11 @@ class LinearSorterTester[T <: Data](dut: LinearSorter[T], in: Seq[Double], tol: 
     }
     step(2)
 
-    if (dut.params.LIStype == "LIS_input") {
+    if (dut.params.LISsubType == "LIS_input") {
       discardPos = dut.params.LISsize/2
       poke(dut.io.discardPos.get, discardPos)
     }
-    else if (dut.params.LIStype == "LIS_fixed") {
+    else if (dut.params.LISsubType == "LIS_fixed") {
       discardPos = dut.params.discardPos.get
     }
     step(2)
@@ -130,7 +130,7 @@ class LinearSorterTester[T <: Data](dut: LinearSorter[T], in: Seq[Double], tol: 
       //expOut = Sorting.quickSort(expOut :+ peek(dut.io.in.bits))
       if (peek(dut.io.out.valid)) {
         tmpData = peek(dut.io.out.bits)
-        if (dut.params.LIStype == "LIS_FIFO") {
+        if (dut.params.LISsubType == "LIS_FIFO") {
           //println("Expected output is: ")
           //println(expOut.map(_.toString()).mkString(", "))
 
@@ -169,7 +169,7 @@ class LinearSorterTester[T <: Data](dut: LinearSorter[T], in: Seq[Double], tol: 
       step(1)
       while (peek(dut.io.out.valid) & out_flush.length < dut.params.LISsize) {
         tmpData = peek(dut.io.out.bits)
-        if (dut.params.LIStype == "LIS_FIFO") {
+        if (dut.params.LISsubType == "LIS_FIFO") {
           dut.params.proto match {
             case dspR: DspReal => realTolDecPts.withValue(tol) { expect(dut.io.out.bits, in(out_flush.length)) }
             case _ =>  fixTolLSBs.withValue(tol) { expect(dut.io.out.bits, in(out_flush.length)) }
@@ -191,7 +191,7 @@ class LinearSorterTester[T <: Data](dut: LinearSorter[T], in: Seq[Double], tol: 
   //println(out.map(_.toString()).mkString(", "))
 }
 
-class LinearSorterTesterRunTime[T <: Data](dut: LinearSorter[T], in: Seq[Double], tolLSB: Int) extends DspTester(dut) {
+class LinearSorterTesterRunTime[T <: Data](dut: LinearSorterCNT[T], in: Seq[Double], tolLSB: Int) extends DspTester(dut) {
 
   def expect_sorted_seq[T <: Data](sig_vec: Vec[T], exp_seq: Seq[Double], tolLSB: Int) {
     exp_seq.zipWithIndex.foreach { case (expected, index) => fixTolLSBs.withValue(tolLSB) { expect(sig_vec(index), expected) }}
@@ -208,11 +208,11 @@ class LinearSorterTesterRunTime[T <: Data](dut: LinearSorter[T], in: Seq[Double]
   var discardPos = 0
 
   updatableDspVerbose.withValue(false) {
-    if (dut.params.LIStype == "LIS_input") {
+    if (dut.params.LISsubType == "LIS_input") {
       discardPos = 0 
       poke(dut.io.discardPos.get, discardPos)
     }
-    else if (dut.params.LIStype == "LIS_fixed") {
+    else if (dut.params.LISsubType == "LIS_fixed") {
       discardPos = 0
     }
     step(10)
@@ -243,7 +243,7 @@ class LinearSorterTesterRunTime[T <: Data](dut: LinearSorter[T], in: Seq[Double]
         }
         if (peek(dut.io.out.valid)) {
           tmpData = peek(dut.io.out.bits)
-          if (dut.params.LIStype == "LIS_FIFO") {
+          if (dut.params.LISsubType == "LIS_FIFO") {
             //println("Expected output is: ")
             //println(expOut.map(_.toString()).mkString(", "))
             fixTolLSBs.withValue(tolLSB) { expect(dut.io.out.bits, in(out.length)) }

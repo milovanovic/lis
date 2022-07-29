@@ -11,7 +11,8 @@ import chisel3.internal.requireIsChiselType
 case class LISParams[T <: Data: Real](
   proto: T,
   LISsize: Int,
-  LIStype: String = "LIS_FIFO",
+  LISsubType: String = "LIS_FIFO",
+  LIStype: String = "LIS_CNT", //
   rtcSize: Boolean = false,
   rtcSortDir: Boolean = false,
   discardPos: Option[Int] = None,
@@ -21,14 +22,19 @@ case class LISParams[T <: Data: Real](
   sortDir: Boolean = true,
 ) {
 
-  final val allowedLISTypes = Seq("LIS_FIFO", "LIS_input", "LIS_fixed")
+  final val allowedLISsubTypes = Seq("LIS_FIFO", "LIS_input", "LIS_fixed")
+  final val allowedLISTypes = Seq("LIS_CNT", "LIS_SR")
+
   requireIsChiselType(proto,  s"($proto) must be chisel type")
 
   def checkLISType() {
     require(allowedLISTypes.contains(LIStype), s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}""")
   }
+  def checkLISsubType() {
+    require(allowedLISsubTypes.contains(LISsubType), s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}""")
+  }
   def checkLIS_fixedSettings() {
-    require((LIStype == "LIS_fixed" && !discardPos.isEmpty) || LIStype != "LIS_fixed" ,s"Position of discarding element must be defined for LIS_fixed linear sorter scheme")
+    require((LISsubType == "LIS_fixed" && !discardPos.isEmpty) || LISsubType != "LIS_fixed" ,s"Position of discarding element must be defined for LIS_fixed linear sorter scheme")
   }
    def checkDiscardPosition() {
     require((discardPos.getOrElse(0) < LISsize), s"Position of discarding element must be less than sorter size")
@@ -47,7 +53,7 @@ class LISIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
   val sorterFull = if (params.useSorterFull) Some(Output(Bool())) else None
   val sorterEmpty = if (params.useSorterEmpty) Some (Output(Bool())) else None
   val lisSize = if (params.rtcSize == true) Some(Input(UInt((log2Up(params.LISsize)+1).W))) else None
-  val discardPos = if (params.LIStype == "LIS_input") Some(Input(UInt(log2Up(params.LISsize).W))) else None
+  val discardPos = if (params.LISsubType == "LIS_input") Some(Input(UInt(log2Up(params.LISsize).W))) else None
 
   override def cloneType: this.type = LISIO(params).asInstanceOf[this.type]
 }
@@ -56,9 +62,10 @@ object LISIO {
   def apply[T <: Data : Real](params: LISParams[T]): LISIO[T] = new LISIO(params)
 }
 
-class LinearSorter [T <: Data: Real] (val params: LISParams[T]) extends Module {
+class LinearSorterCNT [T <: Data: Real] (val params: LISParams[T]) extends Module {
   require(params.LISsize > 1, s"Sorter size must be > 1")
   params.checkLISType()
+  params.checkLISsubType
   params.checkLIS_fixedSettings()
   params.checkDiscardPosition()
 
@@ -132,15 +139,15 @@ class LinearSorter [T <: Data: Real] (val params: LISParams[T]) extends Module {
   state := state_next
   val inputData = Wire(io.in.bits.cloneType)
 
-  if (params.LIStype != "LIS_FIFO")
+  if (params.LISsubType != "LIS_FIFO")
   // if state is sFlush then always insert smallest or largest number depending on sorting direction
     inputData := Mux(state_next =/= sFlush, io.in.bits, outputData(lisSizeReg-1.U))
   else
     inputData := io.in.bits
 
-  val PEChain = cellIndices.map {
+  val PEcntChain = cellIndices.map {
     case (ind) => {
-      val cell = Module(new PE(params,ind))
+      val cell = Module(new PEcnt(params,ind))
       cell.io.inData := inputData//RegNext(inputData)//(io.in.bits)
       if (params.rtcSize) {
         cell.io.lisSize.get := io.lisSize.get // this info is only necessary for FIFO based scheme
@@ -150,7 +157,7 @@ class LinearSorter [T <: Data: Real] (val params: LISParams[T]) extends Module {
       if (params.rtcSortDir) {
         cell.io.sortDir.get := sortDirReg
       }
-      if (params.LIStype != "LIS_FIFO") {
+      if (params.LISsubType != "LIS_FIFO") {
         when (state === sFlush) {
           if (ind == 0)
             cell.io.discard.get := true.B && initialInDone
@@ -176,13 +183,13 @@ class LinearSorter [T <: Data: Real] (val params: LISParams[T]) extends Module {
   val getDiscarded = Wire(UInt(log2Up(params.LISsize+1).W))
   getDiscarded := PriorityEncoder(discardSignals.asUInt)
 
-  // first PE doesn't have left neighbour
-  PEChain(0).io.leftNBR := DontCare
-  // last PE doesn't have right neighbour
-  PEChain(params.LISsize-1).io.rightNBR := DontCare
-  PEChain(params.LISsize-1).io.rightPropDiscard := DontCare
+  // first PEcnt doesn't have left neighbour
+  PEcntChain(0).io.leftNBR := DontCare
+  // last PEcnt doesn't have right neighbour
+  PEcntChain(params.LISsize-1).io.rightNBR := DontCare
+  PEcntChain(params.LISsize-1).io.rightPropDiscard := DontCare
 
-  PEChain.tail.map(_.io).foldLeft(PEChain(0).io) {
+  PEcntChain.tail.map(_.io).foldLeft(PEcntChain(0).io) {
     case (cell1_io, cell2_io) => {
       cell2_io.leftNBR.data := cell1_io.rightOutData
       cell2_io.leftNBR.compRes := cell1_io.currCell.compRes
@@ -214,9 +221,9 @@ object LISApp extends App
   val params: LISParams[FixedPoint] = LISParams(
     proto = FixedPoint(16.W, 14.BP),
     LISsize = 8,
-    LIStype = "LIS_input",
+    LISsubType = "LIS_input",
     rtcSize = false,
     sortDir = true
   )
-  chisel3.Driver.execute(args,()=>new LinearSorter(params))
+  chisel3.Driver.execute(args,()=>new LinearSorterCNT(params))
 }
