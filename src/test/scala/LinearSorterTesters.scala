@@ -6,7 +6,7 @@ import dsptools.numbers._
 import scala.util.{Random, Sorting}
 import scala.collection.mutable.ArrayBuffer
 
-class LinearSorterTesterTestLastIn[T <: Data](dut: LinearSorterCNT[T], in: Seq[Double], tol: Int) extends DspTester(dut) {
+class LinearSorterTesterTestLastIn[T <: Data](dut: LinearSorter[T], in: Seq[Double], tol: Int) extends DspTester(dut) {
   
   def expect_sorted_seq[T <: Data](sig_vec: Vec[T], exp_seq: Seq[Double], tol: Int) {
     sig_vec(0).cloneType match {
@@ -78,7 +78,7 @@ class LinearSorterTesterTestLastIn[T <: Data](dut: LinearSorterCNT[T], in: Seq[D
   }
 }
 
-class LinearSorterTester[T <: Data](dut: LinearSorterCNT[T], in: Seq[Double], tol: Int) extends DspTester(dut) {
+class LinearSorterTester[T <: Data](dut: LinearSorter[T], in: Seq[Double], tol: Int) extends DspTester(dut) {
   
   def expect_sorted_seq[T <: Data](sig_vec: Vec[T], exp_seq: Seq[Double], tol: Int) {
     sig_vec(0).cloneType match {
@@ -191,7 +191,7 @@ class LinearSorterTester[T <: Data](dut: LinearSorterCNT[T], in: Seq[Double], to
   //println(out.map(_.toString()).mkString(", "))
 }
 
-class LinearSorterTesterRunTime[T <: Data](dut: LinearSorterCNT[T], in: Seq[Double], tolLSB: Int) extends DspTester(dut) {
+class LinearSorterTesterRunTime[T <: Data](dut: LinearSorter[T], in: Seq[Double], tolLSB: Int) extends DspTester(dut) {
 
   def expect_sorted_seq[T <: Data](sig_vec: Vec[T], exp_seq: Seq[Double], tolLSB: Int) {
     exp_seq.zipWithIndex.foreach { case (expected, index) => fixTolLSBs.withValue(tolLSB) { expect(sig_vec(index), expected) }}
