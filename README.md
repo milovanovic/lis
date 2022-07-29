@@ -14,10 +14,11 @@ This repository contains a generator of parameterizable and runtime reconfigurab
 
 Linear insertion sorters use the same principle as the well- known insertion sort algorithm. The incoming data are inserted at the appropriate location inside the sorting array thus keeping the array sorted at every moment.
 
-The linear insertion sorter is composed of basic processing elements (PEs) connected in a cascade. The sorter generator scheme featuring streaming I/O data and accompanied with the detailed block diagram of one processing element (PE) is sketched below. Each PE comprises a comparator, multiplexers, store data registers, as well as the control logic. Also, the incoming data, left and right neighboring element data values, comparator results and additional control signals are available inside every PE. The control logic block uses this information to generate signals for left/right shifting, loading new data or resetting the register values. The illustrated generator supports three linear insertion streaming sorters differing only in decision which cell should be discarded in the insertion process and sent to the output.
-![Linear sorters generator scheme](./doc/images/PEChainblock.svg)
+The linear insertion sorter is composed of basic processing elements (PEs) connected in a cascade. The sorter generator scheme featuring streaming I/O data and block diagram of one processing element (PE) for two different linear insertion sorter types is sketched below. The illustrated generator supports for the each sorter type three subtypes  differing only in decision which cell should be discarded in the insertion process and sent to the output.
+![Linear sorters generator scheme](./doc/images/LinearSorterGenerator.svg)
+![Processing elements](./doc/images/ProcessingElements.svg)
 
-Previously explained generator is described with following Scala files available inside`src/main/scala` directory:
+The Chisel generator is described with following Scala files available inside`src/main/scala` directory:
 
 * `LIS_util.scala` - contains useful objects such as `CounterWithReset` and `LifeCounter`
 * `ControlLogic.scala`- description of Control Logic block used inside each `PEcnt` module
