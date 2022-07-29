@@ -5,8 +5,42 @@ import chisel3.util._
 import dsptools._
 import dsptools.numbers._
 import chisel3.experimental.FixedPoint
+import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
 import chisel3.internal.requireIsChiselType
+
+case class LISParams[T <: Data: Real](
+  proto: T,
+  LISsize: Int,
+  LISsubType: String = "LIS_FIFO",
+  LIStype: String = "LIS_CNT", //
+  rtcSize: Boolean = false,
+  rtcSortDir: Boolean = false,
+  discardPos: Option[Int] = None,
+  flushData: Boolean = false,
+  useSorterFull: Boolean = false,
+  useSorterEmpty: Boolean = false,
+  sortDir: Boolean = true,
+) {
+
+  final val allowedLISsubTypes = Seq("LIS_FIFO", "LIS_input", "LIS_fixed")
+  final val allowedLISTypes = Seq("LIS_CNT", "LIS_SR")
+
+  requireIsChiselType(proto,  s"($proto) must be chisel type")
+
+  def checkLISType() {
+    require(allowedLISTypes.contains(LIStype), s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}""")
+  }
+  def checkLISsubType() {
+    require(allowedLISsubTypes.contains(LISsubType), s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}""")
+  }
+  def checkLIS_fixedSettings() {
+    require((LISsubType == "LIS_fixed" && !discardPos.isEmpty) || LISsubType != "LIS_fixed" ,s"Position of discarding element must be defined for LIS_fixed linear sorter scheme")
+  }
+   def checkDiscardPosition() {
+    require((discardPos.getOrElse(0) < LISsize), s"Position of discarding element must be less than sorter size")
+  }
+}
 
 //dut.io.flushData.get
 class LISIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
@@ -49,7 +83,7 @@ class LinearSorter [T <: Data: Real] (val params: LISParams[T]) extends Module {
   }
 }
 
-object LISApp extends App
+object LISsimpleApp extends App
 {
   val params: LISParams[FixedPoint] = LISParams(
     proto = FixedPoint(16.W, 14.BP),
@@ -59,5 +93,50 @@ object LISApp extends App
     rtcSize = false,
     sortDir = true
   )
+  chisel3.Driver.execute(args,()=>new LinearSorter(params))
+}
+
+object LISApp extends App
+{
+  implicit def int2bool(b: Int) = if (b == 1) true else false
+  if (args.length < 5) {
+    println("This application requires at least 5 arguments")
+  }
+  val buildDirName = args(0).toString
+  val wordSize = args(1).toInt
+  val sorterSize = args(2).toInt
+  val isRunTime = int2bool(args(3).toInt)
+  val sorterType = args(4).toString
+  val sorterSubType = args(5).toString
+  val separateVerilog = int2bool(args(6).toInt)
+
+  val params: LISParams[FixedPoint] = LISParams(
+    proto = FixedPoint(16.W, 14.BP),
+    LISsize = sorterSize,
+    LIStype = sorterType,
+    LISsubType = sorterSubType,
+    discardPos = if (sorterSubType == "LIS_fixed") Some(sorterSize/2) else None,
+    rtcSize = isRunTime,
+    rtcSortDir = false,
+    sortDir = true
+  )
+  if (separateVerilog == true) {
+    val arguments = Array(
+      "--target-dir", buildDirName,
+      "-e", "verilog",
+      "-X", "verilog",
+      "--log-level", "info"
+    )
+    (new ChiselStage).execute(arguments, Seq(ChiselGeneratorAnnotation(() =>new LinearSorter(params))))
+  }
+  else {
+    val arguments = Array(
+      "--target-dir", buildDirName,
+      "-X", "verilog",
+      "--log-level", "info"
+    )
+    (new ChiselStage).execute(arguments, Seq(ChiselGeneratorAnnotation(() =>new LinearSorter(params))))
+  }
+
   chisel3.Driver.execute(args,()=>new LinearSorter(params))
 }

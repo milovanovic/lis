@@ -6,41 +6,6 @@ import dsptools._
 import dsptools.numbers._
 import chisel3.experimental.FixedPoint
 
-import chisel3.internal.requireIsChiselType
-
-case class LISParams[T <: Data: Real](
-  proto: T,
-  LISsize: Int,
-  LISsubType: String = "LIS_FIFO",
-  LIStype: String = "LIS_CNT", //
-  rtcSize: Boolean = false,
-  rtcSortDir: Boolean = false,
-  discardPos: Option[Int] = None,
-  flushData: Boolean = false,
-  useSorterFull: Boolean = false,
-  useSorterEmpty: Boolean = false,
-  sortDir: Boolean = true,
-) {
-
-  final val allowedLISsubTypes = Seq("LIS_FIFO", "LIS_input", "LIS_fixed")
-  final val allowedLISTypes = Seq("LIS_CNT", "LIS_SR")
-
-  requireIsChiselType(proto,  s"($proto) must be chisel type")
-
-  def checkLISType() {
-    require(allowedLISTypes.contains(LIStype), s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}""")
-  }
-  def checkLISsubType() {
-    require(allowedLISsubTypes.contains(LISsubType), s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}""")
-  }
-  def checkLIS_fixedSettings() {
-    require((LISsubType == "LIS_fixed" && !discardPos.isEmpty) || LISsubType != "LIS_fixed" ,s"Position of discarding element must be defined for LIS_fixed linear sorter scheme")
-  }
-   def checkDiscardPosition() {
-    require((discardPos.getOrElse(0) < LISsize), s"Position of discarding element must be less than sorter size")
-  }
-}
-
 class LinearSorterCNT [T <: Data: Real] (val params: LISParams[T]) extends Module {
   require(params.LISsize > 1, s"Sorter size must be > 1")
   params.checkLISType()
