@@ -40,27 +40,6 @@ case class LISParams[T <: Data: Real](
     require((discardPos.getOrElse(0) < LISsize), s"Position of discarding element must be less than sorter size")
   }
 }
-//dut.io.flushData.get
-class LISIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
-  val in = Flipped(Decoupled(params.proto))
-  val lastIn = Input(Bool())
-  val flushData = if (params.flushData) Some(Input(Bool())) else None
-  val out = Decoupled(params.proto)
-  val lastOut = Output(Bool())
-  val sortedData = Output(Vec(params.LISsize, params.proto)) // for fpga testing this output is not used
-
-  val sortDir = if (params.rtcSortDir) Some(Input(Bool())) else None
-  val sorterFull = if (params.useSorterFull) Some(Output(Bool())) else None
-  val sorterEmpty = if (params.useSorterEmpty) Some (Output(Bool())) else None
-  val lisSize = if (params.rtcSize == true) Some(Input(UInt((log2Up(params.LISsize)+1).W))) else None
-  val discardPos = if (params.LISsubType == "LIS_input") Some(Input(UInt(log2Up(params.LISsize).W))) else None
-
-  override def cloneType: this.type = LISIO(params).asInstanceOf[this.type]
-}
-
-object LISIO {
-  def apply[T <: Data : Real](params: LISParams[T]): LISIO[T] = new LISIO(params)
-}
 
 class LinearSorterCNT [T <: Data: Real] (val params: LISParams[T]) extends Module {
   require(params.LISsize > 1, s"Sorter size must be > 1")
@@ -216,7 +195,7 @@ class LinearSorterCNT [T <: Data: Real] (val params: LISParams[T]) extends Modul
   io.out.valid := initialInDone && io.in.valid || state === sFlush //initialInDone && RegNext(io.in.valid) || state === sFlush
 }
 
-object LISApp extends App
+object LIScntApp extends App
 {
   val params: LISParams[FixedPoint] = LISParams(
     proto = FixedPoint(16.W, 14.BP),
