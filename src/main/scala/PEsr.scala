@@ -5,7 +5,6 @@ import chisel3.util._
 import dsptools.numbers._
 import chisel3.experimental.FixedPoint
 
-
 class PEsrIO[T <: Data: Real] (params: LISParams[T], index: Int) extends Bundle {
   val sortDir = if (params.rtcSortDir) Some(Input(Bool())) else None
   val xor_input = Input(Bool())
