@@ -2,8 +2,6 @@
 A Linear Insertion Sorter (LIS) Chisel Generator
 ================================================
 
-[![Build Status](https://travis-ci.com/milovanovic/lis.svg?branch=master)](https://travis-ci.com/milovanovic/lis)
-
 ## Overview
 
 This repository contains a generator of parameterizable and runtime reconfigurable fully streaming linear insertion sorters writen in [Chisel ](http://www.chisel-lang.org) hardware design language. Fully streaming linear sorters with their rather simple and low-cost hardware architecture are widely used as the fundamental building blocks in many digital signal processing applications that require sorting operations and continuous data streaming interface.
