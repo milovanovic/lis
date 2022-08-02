@@ -13,9 +13,11 @@ Linear insertion sorters use the same principle as the well- known insertion sor
 The linear insertion sorter is composed of basic processing elements (PEs) connected in a cascade. The sorter generator scheme featuring streaming I/O data and block diagram of one processing element (PE) for two different linear insertion sorter types is sketched below. The illustrated generator supports, for the each sorter type, three subtypes differing only in decision which cell should be discarded in the insertion process and sent to the output.
 
 Design generator of linear insertion sorters scheme:
+
 ![Linear sorters generator scheme](./doc/images/LinearSorterGenerator.svg)
 
 Processing elements of two different LIS types:
+
 ![Processing elements](./doc/images/ProcessingElements.svg)
 
 The Chisel generator is described with following Scala files available inside`src/main/scala` directory:
