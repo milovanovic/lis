@@ -1,0 +1,57 @@
+name: sbt test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+env:
+  INSTALL_DIR: ${{ github.workspace }}/install
+  CHISEL3: 3.4-SNAPSHOT
+  CHISEL_TESTERS: 1.5-SNAPSHOT
+  VERILATOR_REPO_URL: https://github.com/verilator/verilator.git
+  VERILATOR_CHECKOUT_TARGET: v3.926
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up environment
+      run: |
+        mkdir -p $INSTALL_DIR
+        VERILATOR_ROOT=$INSTALL_DIR
+        echo "VERILATOR_ROOT=$INSTALL_DIR" | tee --append "$GITHUB_ENV"
+        echo "$VERILATOR_ROOT/bin" | tee --append "$GITHUB_PATH"
+        CACHE_KEY=${{ runner.os }}-$(git ls-remote "$VERILATOR_REPO_URL" "$VERILATOR_CHECKOUT_TARGET" | awk 'NR==1{print $1 "-" $2; quit}')
+        if [ ! "$CACHE_KEY" ]; then
+          echo "error: Checkout target '$VERILATOR_CHECKOUT_TARGET' not found" >&2
+          exit 1
+        fi
+        echo "CACHE_KEY=$CACHE_KEY" | tee --append "$GITHUB_ENV"
+    - uses: actions/checkout@v3
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: 'sbt'
+
+    - uses: actions/cache@v3
+      id: install-cache
+      with:
+        path: ${{ env.INSTALL_DIR }}
+        key: ${{ env.CACHE_KEY }}
+    - name: Install verilator
+      if: steps.install-cache.outputs.cache-hit != 'true'
+      run: |
+        sudo apt-get update -y &&
+        sudo apt-get install -y libfl-dev
+        bash .install_verilator.sh
+    - name: Run tests
+      run: set -o pipefail && sbt -Dchisel3Version=$CHISEL3 -Dchisel-iotestersVersion=$CHISEL_TESTERS test
