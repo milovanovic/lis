@@ -6,14 +6,16 @@ A Linear Insertion Sorter (LIS) Chisel Generator
 
 This repository contains a generator of parameterizable and runtime reconfigurable fully streaming linear insertion sorters writen in [Chisel ](http://www.chisel-lang.org) hardware design language. Fully streaming linear sorters with their rather simple and low-cost hardware architecture are widely used as the fundamental building blocks in many digital signal processing applications that require sorting operations and continuous data streaming interface.
 
-[comment]: <> (To make a Chisel project and include LIS generator, an open source starter template Chipyard Framework can be used.)
-
 ### Linear streaming sorters
 
 Linear insertion sorters use the same principle as the well- known insertion sort algorithm. The incoming data are inserted at the appropriate location inside the sorting array thus keeping the array sorted at every moment.
 
-The linear insertion sorter is composed of basic processing elements (PEs) connected in a cascade. The sorter generator scheme featuring streaming I/O data and block diagram of one processing element (PE) for two different linear insertion sorter types is sketched below. The illustrated generator supports for the each sorter type three subtypes  differing only in decision which cell should be discarded in the insertion process and sent to the output.
+The linear insertion sorter is composed of basic processing elements (PEs) connected in a cascade. The sorter generator scheme featuring streaming I/O data and block diagram of one processing element (PE) for two different linear insertion sorter types is sketched below. The illustrated generator supports, for the each sorter type, three subtypes differing only in decision which cell should be discarded in the insertion process and sent to the output.
+
+Design generator of linear insertion sorters scheme:
 ![Linear sorters generator scheme](./doc/images/LinearSorterGenerator.svg)
+
+Processing elements of two different LIS types:
 ![Processing elements](./doc/images/ProcessingElements.svg)
 
 The Chisel generator is described with following Scala files available inside`src/main/scala` directory:
