@@ -2,15 +2,14 @@ name: sbt test
 
 on:
   push:
-    branches: [
-      "master"
-      "add_new_lis_type"
-    ]
+    branches:
+      - master
+      - add_new_lis_type
+
   pull_request:
-    branches: [
-      "master"
-      "add_new_lis_type"
-    ]
+    branches:
+      - master
+      - add_new_lis_type
 
 permissions:
   contents: read
