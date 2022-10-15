@@ -108,5 +108,5 @@ Tester functions such as `peek`, `poke` and `except`, available inside `DspTeste
 
 ----------
 
-This code is maintained by Marija Petrović and Vladimir Milovanović. Please let us know if you have any questions/feedback!
+Much more useful information about this work (focused on `LIStype = LIS_CNT` type) can be found inside "A Chisel Generator of Parameterizable and Runtime Reconfigurable Linear Insertion Streaming Sorters" paper published on International Conference on Microelectronics, MIEL 2021. Please let us know if you have any questions/feedback!
 
