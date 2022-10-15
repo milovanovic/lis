@@ -4,6 +4,8 @@ import chisel3._
 import chisel3.util._
 import dsptools.numbers._
 import chisel3.experimental.FixedPoint
+import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
+
 
 class PEsrIO[T <: Data: Real] (params: LISParams[T], index: Int) extends Bundle {
   val sortDir = if (params.rtcSortDir) Some(Input(Bool())) else None
@@ -17,8 +19,6 @@ class PEsrIO[T <: Data: Real] (params: LISParams[T], index: Int) extends Bundle 
   val data_out = Output(params.proto.cloneType)
   val isLast = Input(Bool())
   val xor_output = Output(Bool())
-
-  override def cloneType: this.type = PEsrIO(params, index).asInstanceOf[this.type]
 }
 
 object PEsrIO {
@@ -73,5 +73,5 @@ object PEsrApp extends App
     sortDir = true,
     rtcSortDir = true
   )
-  chisel3.Driver.execute(args,()=>new PEsr(params, 5))
+  (new ChiselStage).execute(Array("--target-dir", "verilog/PEsr"), Seq(ChiselGeneratorAnnotation(() => new PEsr(params, 5))))
 }

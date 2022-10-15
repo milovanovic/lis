@@ -3,6 +3,7 @@ package lis
 import chisel3._
 import chisel3.util._
 import chisel3.experimental._
+import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 import dsptools._
 import dsptools.numbers._
 
@@ -107,12 +108,10 @@ object LISDspBlock extends App
     rtcSize = false,
     sortDir = true
   )
-
   val baseAddress = 0x500
   implicit val p: Parameters = Parameters.empty
   val lisModule = LazyModule(new AXI4LISBlock(paramsLIS, AddressSet(baseAddress + 0x100, 0xFF), _beatBytes = 4) with dspblocks.AXI4StandaloneBlock {
     override def standaloneParams = AXI4BundleParameters(addrBits = 32, dataBits = 32, idBits = 1)
   })
-
-  chisel3.Driver.execute(args, ()=> lisModule.module) // generate verilog code
+  (new ChiselStage).execute(args, Seq(ChiselGeneratorAnnotation(() => lisModule.module)))
 }

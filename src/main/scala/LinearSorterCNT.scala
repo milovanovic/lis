@@ -5,6 +5,7 @@ import chisel3.util._
 import dsptools._
 import dsptools.numbers._
 import chisel3.experimental.FixedPoint
+import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
 class LinearSorterCNT [T <: Data: Real] (val params: LISParams[T]) extends Module {
   require(params.LISsize > 1, s"Sorter size must be > 1")
@@ -169,5 +170,5 @@ object LIScntApp extends App
     rtcSize = false,
     sortDir = true
   )
-  chisel3.Driver.execute(args,()=>new LinearSorterCNT(params))
+  (new ChiselStage).execute(Array("--target-dir", "verilog/LIScnt"), Seq(ChiselGeneratorAnnotation(() =>new  LinearSorterCNT(params))))
 }

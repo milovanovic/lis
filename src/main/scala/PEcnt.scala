@@ -2,6 +2,7 @@ package lis
 
 import chisel3._
 import chisel3.util._
+import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 import dsptools.numbers._
 import chisel3.experimental.FixedPoint
 
@@ -9,7 +10,6 @@ class PEcntMembers [T <: Data: Real] (proto: T, sorterSize: Int) extends Bundle 
   val data =    proto
   val lifeCNT = UInt(log2Up(sorterSize).W)
   val compRes = Bool()
-  override def cloneType: this.type = PEcntMembers(proto, sorterSize).asInstanceOf[this.type] // must have cloneType
 }
 
 object PEcntMembers {
@@ -39,8 +39,6 @@ class PEcntIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
   val rightOutData = Output(params.proto.cloneType)
   val currDiscard = Output(Bool())
   val toLeftPropDiscard = Output(Bool())
-
-  override def cloneType: this.type = PEcntIO(params).asInstanceOf[this.type]
 }
 
 object PEcntIO {
@@ -179,5 +177,5 @@ object PEcntApp extends App
     rtcSize = false,
     sortDir = true
   )
-  chisel3.Driver.execute(args,()=>new PEcnt(params, 2))
+  (new ChiselStage).execute(Array("--target-dir", "verilog/PEcnt"), Seq(ChiselGeneratorAnnotation(() => new PEcnt(params, 2))))
 }

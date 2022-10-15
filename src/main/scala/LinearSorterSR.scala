@@ -4,7 +4,6 @@ import chisel3._
 import chisel3.util._
 import dsptools.numbers._
 import chisel3.experimental.FixedPoint
-
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
 class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module {
@@ -165,7 +164,7 @@ object LISsrApp extends App
     rtcSortDir = false,
     sortDir = true
   )
-  chisel3.Driver.execute(args,()=>new LinearSorterSR(params))
+  (new ChiselStage).execute(Array("--target-dir", "verilog/LISsr"), Seq(ChiselGeneratorAnnotation(() =>new  LinearSorterSR(params))))
 }
 
 object LinearSorterSRApp extends App

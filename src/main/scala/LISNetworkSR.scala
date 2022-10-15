@@ -2,6 +2,7 @@ package lis
 
 import chisel3._
 import chisel3.util._
+import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 import dsptools._
 import dsptools.numbers._
 import chisel3.experimental.FixedPoint
@@ -16,8 +17,6 @@ class LISNetworkSRIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
   val sortedData = Input(Vec((params.LISsize+1), params.proto.cloneType)) // top level model defines this
   val nextSortedData = Output(Vec((params.LISsize+1), params.proto.cloneType))
   val lisSize = if (params.rtcSize == true) Some(Input(UInt((log2Up(params.LISsize)+1).W))) else None
-
-  override def cloneType: this.type = LISNetworkSRIO(params).asInstanceOf[this.type]
 }
 
 object LISNetworkSRIO {
@@ -87,5 +86,5 @@ object LISNetworkSRApp extends App
     rtcSize = true,
     sortDir = true
   )
-  chisel3.Driver.execute(args,()=>new LISNetworkSR(params))
+  (new ChiselStage).execute(Array("--target-dir", "verilog/LISNetworkSR"), Seq(ChiselGeneratorAnnotation(() => new LISNetworkSR(params))))
 }

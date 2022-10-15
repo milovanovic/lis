@@ -6,7 +6,6 @@ import dsptools._
 import dsptools.numbers._
 import chisel3.experimental.FixedPoint
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
-
 import chisel3.internal.requireIsChiselType
 
 case class LISParams[T <: Data: Real](
@@ -56,8 +55,6 @@ class LISIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
   val sorterEmpty = if (params.useSorterEmpty) Some (Output(Bool())) else None
   val lisSize = if (params.rtcSize == true) Some(Input(UInt((log2Up(params.LISsize)+1).W))) else None
   val discardPos = if (params.LISsubType == "LIS_input") Some(Input(UInt(log2Up(params.LISsize).W))) else None
-
-  override def cloneType: this.type = LISIO(params).asInstanceOf[this.type]
 }
 
 object LISIO {
@@ -93,7 +90,7 @@ object LISsimpleApp extends App
     rtcSize = false,
     sortDir = true
   )
-  chisel3.Driver.execute(args,()=>new LinearSorter(params))
+  (new ChiselStage).execute(Array("--target-dir", "verilog/LISsimple"), Seq(ChiselGeneratorAnnotation(() =>new  LinearSorter(params))))
 }
 
 object LISApp extends App
@@ -138,5 +135,5 @@ object LISApp extends App
     (new ChiselStage).execute(arguments, Seq(ChiselGeneratorAnnotation(() =>new LinearSorter(params))))
   }
 
-  chisel3.Driver.execute(args,()=>new LinearSorter(params))
+  //chisel3.Driver.execute(args,()=>new LinearSorter(params))
 }
