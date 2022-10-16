@@ -27,13 +27,12 @@ class CounterWithReset(n: Int, initValue: UInt) {
 
 object CounterWithReset {
   def apply(n: Int, initValue: UInt): CounterWithReset = new CounterWithReset(n, initValue)
-  def apply(cond: Bool, initValue: UInt, reset: Bool, n: Int): (UInt, Bool) = {
+  def apply(cond: Bool, initValue: UInt, reset: Bool, n: Int): UInt = {
     val c = new CounterWithReset(n, initValue)
-  //  var wrap: Bool = null
-  //  when (cond) { wrap = c.inc() }
+    //var wrap: Bool = null
+    when (cond) { c.inc() }
     when (reset) { c.reset() }
-  //  (c.value, cond && wrap)
-    (c.value, cond)
+    c.value
   }
 }
 

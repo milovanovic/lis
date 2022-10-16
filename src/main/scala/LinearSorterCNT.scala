@@ -57,7 +57,7 @@ class LinearSorterCNT [T <: Data: Real] (val params: LISParams[T]) extends Modul
   state_next := state
   val enable = io.out.valid && io.out.ready && state === sFlush
   val cntOutDataWire = Wire(UInt(log2Up(params.LISsize).W))
-  val (cntOutData, wrap) = CounterWithReset(cond = enable, initValue = 0.U((log2Up(params.LISsize)).W), reset = state === sIdle, n = params.LISsize)
+  val cntOutData = CounterWithReset(cond = enable, initValue = 0.U((log2Up(params.LISsize)).W), reset = state === sIdle, n = params.LISsize)
  
   cntOutDataWire := cntOutData
   val fireLastIn = io.lastIn && io.in.fire()
