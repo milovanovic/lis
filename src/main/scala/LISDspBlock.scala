@@ -41,6 +41,9 @@ abstract class LISBlock [T <: Data : Real: BinaryRepresentation, D, U, E, O, B <
     // connect input
     lis.io.in.valid := in.valid
     lis.io.in.bits := in.bits.data.asTypeOf(params.proto)
+    lis.io.lastIn := in.bits.last
+
+    out.bits.last := lis.io.lastOut
     in.ready := lis.io.out.ready
 
     // connect control registers
