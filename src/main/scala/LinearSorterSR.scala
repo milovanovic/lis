@@ -181,7 +181,7 @@ object LinearSorterSRApp extends App
   val separateVerilog = int2bool(args(5).toInt)
 
   val params: LISParams[FixedPoint] = LISParams(
-    proto = FixedPoint(16.W, 14.BP),
+    proto = FixedPoint(wordSize.W, (wordSize-2).BP),
     LISsize = sorterSize,
     LIStype = "LIS_SR",
     LISsubType = sorterSubType,

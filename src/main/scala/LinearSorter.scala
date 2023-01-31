@@ -68,6 +68,11 @@ class LinearSorter [T <: Data: Real] (val params: LISParams[T]) extends Module {
   params.checkLIS_fixedSettings()
   params.checkDiscardPosition()
 
+  // module name
+  val run_flag = if (params.rtcSize) "on" else "off"
+
+  override def desiredName = params.LIStype + "_size_" + params.LISsize.toString + "_width_" + params.proto.getWidth.toString + "_runtime_" + run_flag
+
   val io = IO(LISIO(params))
 
   if (params.LIStype == "LIS_CNT") {
@@ -108,7 +113,7 @@ object LISApp extends App
   val separateVerilog = int2bool(args(6).toInt)
 
   val params: LISParams[FixedPoint] = LISParams(
-    proto = FixedPoint(16.W, 14.BP),
+    proto = FixedPoint(wordSize.W, (wordSize-2).BP),
     LISsize = sorterSize,
     LIStype = sorterType,
     LISsubType = sorterSubType,
