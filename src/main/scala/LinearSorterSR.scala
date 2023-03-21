@@ -60,6 +60,10 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
     val srLISOutVector = shiftRegLISsr.io.parallelOut
     outDataFifo.get := shiftRegLISsr.io.out.bits
 
+    if (params.sendMiddle) {
+      io.middleData.get := srLISOutVector(io.lisSize.getOrElse(params.LISsize.U) >> 1.U)
+    }
+
     when (~initialInDone) {
       lose_data := rstProto
     }
@@ -74,14 +78,14 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
     lose_data := Mux(initialInDone, sortedDataExt(io.discardPos.get), rstProto)
   }
 
-  when (io.in.fire()) {
+  when (io.in.fire) {
     cntInData := cntInData +% 1.U
   }
   .elsewhen (state === sIdle) {
     cntInData := 0.U
   }
 
-  when (cntInData === (lisSizeReg - 1.U) && io.in.fire()) {
+  when (cntInData === (lisSizeReg - 1.U) && io.in.fire) {
     initialInDone := true.B
   }
   .elsewhen (state_next === sIdle) {
@@ -93,7 +97,7 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
   val cntOutData = CounterWithReset(cond = enable, initValue = 0.U((log2Up(params.LISsize)).W), reset = state === sIdle, n = params.LISsize)
 
   cntOutDataWire := cntOutData
-  val fireLastIn = io.lastIn && io.in.fire()
+  val fireLastIn = io.lastIn && io.in.fire
 
   val inputData = Wire(io.in.bits.cloneType)
   if (params.LISsubType != "LIS_FIFO")
@@ -107,7 +111,7 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
   }
   LISnetworkSR.io.data_rm := lose_data
   LISnetworkSR.io.data_insert := inputData //io.in.bits
-  when (state =/= sIdle || (state === sIdle && io.in.fire())) {
+  when (state =/= sIdle || (state === sIdle && io.in.fire)) {
     sortedDataExt := LISnetworkSR.io.nextSortedData
   }
   LISnetworkSR.io.sortedData := sortedDataExt
@@ -120,7 +124,7 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
       lisSizeReg := io.lisSize.getOrElse(params.LISsize.U)
       sortDirReg := io.sortDir.getOrElse(params.sortDir.B)
 
-      when (io.in.fire()) { state_next := sProcess }
+      when (io.in.fire) { state_next := sProcess }
     }
     is (sProcess) {
       when ((io.flushData.getOrElse(false.B) || fireLastIn)) {
@@ -159,7 +163,9 @@ object LISsrApp extends App
     proto = FixedPoint(16.W, 14.BP),
     LISsize = 64,
     LISsubType = "LIS_FIFO",
+    LIStype = "LIS_SR",
     discardPos = None,
+    sendMiddle = true,
     rtcSize = false,
     rtcSortDir = false,
     sortDir = true

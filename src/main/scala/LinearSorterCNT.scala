@@ -40,14 +40,14 @@ class LinearSorterCNT [T <: Data: Real] (val params: LISParams[T]) extends Modul
       active := true.B
     }
   }
-  when (io.in.fire()) {
+  when (io.in.fire) {
     cntInData := cntInData +% 1.U
   }
   .elsewhen (state === sIdle) {
     cntInData := 0.U
   }
 
-  when (cntInData === (lisSizeReg - 1.U) && io.in.fire()) {
+  when (cntInData === (lisSizeReg - 1.U) && io.in.fire) {
     initialInDone := true.B
   }
   .elsewhen (state_next === sIdle) {
@@ -60,13 +60,13 @@ class LinearSorterCNT [T <: Data: Real] (val params: LISParams[T]) extends Modul
   val cntOutData = CounterWithReset(cond = enable, initValue = 0.U((log2Up(params.LISsize)).W), reset = state === sIdle, n = params.LISsize)
  
   cntOutDataWire := cntOutData
-  val fireLastIn = io.lastIn && io.in.fire()
+  val fireLastIn = io.lastIn && io.in.fire
   // lastOut can be asserted  either when lastIn is active and flushData register is used
   switch (state) {
     is (sIdle) {
       lisSizeReg := io.lisSize.getOrElse(params.LISsize.U)
       sortDirReg := io.sortDir.getOrElse(params.sortDir.B)
-      when (io.in.fire()) { state_next := sProcess }
+      when (io.in.fire) { state_next := sProcess }
     }
     is (sProcess) {
       when ((io.flushData.getOrElse(false.B) || fireLastIn)) {
@@ -116,8 +116,8 @@ class LinearSorterCNT [T <: Data: Real] (val params: LISParams[T]) extends Modul
           cell.io.discard.get := false.B
         }
       }
-      //cell.io.enableSort := (RegNext(io.in.fire()) && activeCells(ind))
-      cell.io.enableSort := io.in.fire() || (state === sFlush && io.out.ready)//(RegNext(io.in.fire()) || (state === sFlush && io.out.ready)) && activeCells(ind)
+      //cell.io.enableSort := (RegNext(io.in.fire) && activeCells(ind))
+      cell.io.enableSort := io.in.fire || (state === sFlush && io.out.ready)//(RegNext(io.in.fire) || (state === sFlush && io.out.ready)) && activeCells(ind)
       cell.io.state := state_next
       outputData(ind) := cell.io.currCell.data
       discardSignals(ind) := cell.io.currDiscard

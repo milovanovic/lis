@@ -17,6 +17,7 @@ case class LISParams[T <: Data: Real](
   rtcSortDir: Boolean = false,
   discardPos: Option[Int] = None,
   flushData: Boolean = false,
+  sendMiddle: Boolean = false,
   useSorterFull: Boolean = false,
   useSorterEmpty: Boolean = false,
   sortDir: Boolean = true,
@@ -49,7 +50,7 @@ class LISIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
   val out = Decoupled(params.proto)
   val lastOut = Output(Bool())
   val sortedData = Output(Vec(params.LISsize, params.proto)) // for fpga testing this output is not used
-
+  val middleData = if (params.sendMiddle && params.LIStype == "LIS_SR") Some(Output(params.proto)) else None
   val sortDir = if (params.rtcSortDir) Some(Input(Bool())) else None
   val sorterFull = if (params.useSorterFull) Some(Output(Bool())) else None
   val sorterEmpty = if (params.useSorterEmpty) Some (Output(Bool())) else None
