@@ -111,7 +111,7 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
   }
   LISnetworkSR.io.data_rm := lose_data
   LISnetworkSR.io.data_insert := inputData //io.in.bits
-  when (state =/= sIdle || (state === sIdle && io.in.fire)) {
+  when ((state =/= sIdle && io.in.fire) || (state === sIdle && io.in.fire)) {
     sortedDataExt := LISnetworkSR.io.nextSortedData
   }
   LISnetworkSR.io.sortedData := sortedDataExt
