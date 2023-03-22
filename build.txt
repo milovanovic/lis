@@ -1,6 +1,6 @@
 import Tests._
 
-lazy val magnitude = Project("magnitude", file("."))
+lazy val lis = Project("lis", file("."))
   .dependsOn(`rocket-dsp-utils`)
   .settings(
     chiselSettings,
