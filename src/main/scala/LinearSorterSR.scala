@@ -52,7 +52,7 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
   val outDataFifo = if (params.LISsubType == "LIS_FIFO") Some(WireInit(rstProto)) else None
 
   if (params.LISsubType == "LIS_FIFO") {
-    val shiftRegLISsr =  Module(new AdjustableShiftRegisterStream(params.proto, params.LISsize, sendCnt = true, adjust = params.rtcSize))
+    val shiftRegLISsr =  Module(new AdjustableShiftRegisterStream(params.proto, params.LISsize, sendCnt = true, adjust = params.rtcSize, enInitStore = params.enInitStore))
     shiftRegLISsr.io.in <> io.in
     shiftRegLISsr.io.depth := io.lisSize.getOrElse(params.LISsize.U)
     shiftRegLISsr.io.lastIn := io.lastIn
@@ -153,7 +153,12 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
   else //if (params.LISsubType == "LIS_fixed")
     io.out.bits := sortedDataExt(io.discardPos.getOrElse(params.discardPos.get.U))
   io.lastOut  := cntOutDataWire === (lisSizeReg-1.U)
-  io.in.ready := ~initialInDone || io.out.ready && state =/= sFlush
+  if (params.enInitStore) {
+    io.in.ready := ~initialInDone || io.out.ready && state =/= sFlush
+  }
+  else {
+    io.in.ready := io.out.ready && state =/= sFlush
+  }
   io.out.valid := initialInDone && io.in.valid || state === sFlush //initialInDone && RegNext(io.in.valid) || state === sFlush
 }
 

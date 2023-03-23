@@ -12,12 +12,13 @@ case class LISParams[T <: Data: Real](
   proto: T,
   LISsize: Int,
   LISsubType: String = "LIS_FIFO",
-  LIStype: String = "LIS_CNT", //
+  LIStype: String = "LIS_CNT",
   rtcSize: Boolean = false,
   rtcSortDir: Boolean = false,
   discardPos: Option[Int] = None,
   flushData: Boolean = false,
   sendMiddle: Boolean = false,
+  enInitStore: Boolean = true, // in.ready not equal to out.ready during the init data storing
   useSorterFull: Boolean = false,
   useSorterEmpty: Boolean = false,
   sortDir: Boolean = true,
