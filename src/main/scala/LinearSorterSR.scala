@@ -141,7 +141,7 @@ class LinearSorterSR [T <: Data: Real] (val params: LISParams[T]) extends Module
 
 
   if (params.useSorterFull) {
-    io.sorterFull.get := initialInDone && state =/= sFlush
+    io.sorterFull.get := initialInDone && RegNext(state =/= sFlush) // Check this RegNext once again!!!
   }
   if (params.useSorterEmpty) {
     io.sorterEmpty.get := state === sIdle
