@@ -73,7 +73,7 @@ class LinearSorter [T <: Data: Real] (val params: LISParams[T]) extends Module {
   // module name
   val run_flag = if (params.rtcSize) "on" else "off"
 
-  override def desiredName = params.LIStype + "_size_" + params.LISsize.toString + "_width_" + params.proto.getWidth.toString + "_runtime_" + run_flag
+  override def desiredName = params.LIStype + "_" + params.LISsubType + "_size_" + params.LISsize.toString + "_width_" + params.proto.getWidth.toString + "_runtime_" + run_flag
 
   val io = IO(LISIO(params))
 
