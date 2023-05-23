@@ -10,9 +10,9 @@ git submodule deinit -f tools/dsptools/
 rm -rf .git/modules/tools/dsptools/
 git rm -f tools/dsptools/
 
-git submodule deinit -f tools/api-config-chipsalliance/
-rm -rf .git/modules/tools/api-config-chipsalliance/
-git rm -f tools/api-config-chipsalliance/
+git submodule deinit -f tools/cde/
+rm -rf .git/modules/tools/cde/
+git rm -f tools/cde/
 
 git submodule deinit -f sims/firesim
 rm -rf .git/modules/sims/firesim

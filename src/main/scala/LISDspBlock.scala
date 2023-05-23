@@ -8,11 +8,12 @@ import dsptools._
 import dsptools.numbers._
 
 import dspblocks._
+import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.amba.axi4stream._
-import freechips.rocketchip.config._
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.regmapper._
+import freechips.rocketchip.tilelink._
 
 abstract class LISBlock[T <: Data: Real: BinaryRepresentation, D, U, E, O, B <: Data](
   params:    LISParams[T],
@@ -112,6 +113,29 @@ abstract class LISBlock[T <: Data: Real: BinaryRepresentation, D, U, E, O, B <: 
   }
 }
 
+class TLLISBlock[T <: Data: Real: BinaryRepresentation](
+  val params: LISParams[T],
+  address:    AddressSet,
+  beatBytes:  Int = 8
+)(
+  implicit p: Parameters)
+    extends LISBlock[T, TLClientPortParameters, TLManagerPortParameters, TLEdgeOut, TLEdgeIn, TLBundle](
+      params,
+      beatBytes
+    )
+    with TLDspBlock
+    with TLHasCSR {
+  val devname = "TLLISBlock"
+  val devcompat = Seq("lis", "radardsp")
+  val device = new SimpleDevice(devname, devcompat) {
+    override def describe(resources: ResourceBindings): Description = {
+      val Description(name, mapping) = super.describe(resources)
+      Description(name, mapping)
+    }
+  }
+  override val mem = Some(TLRegisterNode(address = Seq(address), device = device, beatBytes = beatBytes))
+}
+
 class AXI4LISBlock[T <: Data: Real: BinaryRepresentation](
   params:     LISParams[T],
   address:    AddressSet,
@@ -131,7 +155,7 @@ class AXI4LISBlock[T <: Data: Real: BinaryRepresentation](
   val mem = Some(AXI4RegisterNode(address = address, beatBytes = _beatBytes)) // use AXI4 memory mapped
 }
 
-object LISDspBlock extends App {
+object LISAXI4DspBlock extends App {
   val paramsLIS: LISParams[FixedPoint] = LISParams(
     proto = FixedPoint(16.W, 14.BP),
     LISsize = 8,
@@ -146,6 +170,22 @@ object LISDspBlock extends App {
       with dspblocks.AXI4StandaloneBlock {
       override def standaloneParams = AXI4BundleParameters(addrBits = 32, dataBits = 32, idBits = 1)
     }
+  )
+  (new ChiselStage).execute(args, Seq(ChiselGeneratorAnnotation(() => lisModule.module)))
+}
+
+object LISTLDspBlock extends App {
+  val paramsLIS: LISParams[FixedPoint] = LISParams(
+    proto = FixedPoint(16.W, 14.BP),
+    LISsize = 8,
+    LISsubType = "LIS_input",
+    rtcSize = false,
+    sortDir = true
+  )
+  val baseAddress = 0x500
+  implicit val p: Parameters = Parameters.empty
+  val lisModule = LazyModule(
+    new TLLISBlock(paramsLIS, AddressSet(baseAddress + 0x100, 0xff), beatBytes = 4) with dspblocks.TLStandaloneBlock {}
   )
   (new ChiselStage).execute(args, Seq(ChiselGeneratorAnnotation(() => lisModule.module)))
 }

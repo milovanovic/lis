@@ -4,25 +4,27 @@
 set -e
 set -o pipefail
 
-# chipyard 1.8.1 version of tools
-DSPTOOLS_COMMIT=a1809fb
-ROCKET_COMMIT=44b0b82
-FIRESIM_COMMIT=8176b65
-API_CONFIG_COMMIT=fd8df11
-ROCKET_DSP_COMMIT=16e26e7 # includes ShiftRegisterMem fix
+CHIPYARD_VERSION="1.9.1"
+DSPTOOLS_COMMIT=5b1e733
+ROCKET_COMMIT=25e2c63
+FIRESIM_COMMIT=3ae68ec
+ROCKET_DSP_COMMIT=ef552e7 #milovanovic/rocket-dsp-utils # original rocket-dsp-utils is 4f04a3c
 
 git submodule add https://github.com/ucb-bar/dsptools.git tools/dsptools
 cd tools/dsptools
 git checkout $DSPTOOLS_COMMIT
 cd ../..
-git submodule add https://github.com/ucb-bar/rocket-dsp-utils.git tools/rocket-dsp-utils
+#git submodule add https://github.com/ucb-bar/rocket-dsp-utils.git tools/rocket-dsp-utils
+git submodule add  https://github.com/milovanovic/rocket-dsp-utils.git tools/rocket-dsp-utils
 cd tools/rocket-dsp-utils
 git checkout $ROCKET_DSP_COMMIT
 cd ../..
-git submodule add https://github.com/chipsalliance/cde.git tools/api-config-chipsalliance
-cd tools/api-config-chipsalliance
-git checkout $API_CONFIG_COMMIT
+
+git submodule add https://github.com/chipsalliance/cde.git tools/cde
+cd tools/cde
+git checkout 384c06b
 cd ../..
+
 git submodule add https://github.com/chipsalliance/rocket-chip.git generators/rocket-chip
 cd generators/rocket-chip
 git checkout $ROCKET_COMMIT
@@ -39,7 +41,7 @@ cd ../..
 mv build.txt build.sbt
 
 if [ -d project ]; then
-   echo "Directory project already exists!"
+   echo "Directory project already exists"
 else
    mkdir project
 fi
