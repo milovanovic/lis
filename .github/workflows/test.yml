@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - development
+      - chipyard-1.8
 
   pull_request:
     branches:
