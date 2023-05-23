@@ -9,8 +9,7 @@ DSPTOOLS_COMMIT=a1809fb
 ROCKET_COMMIT=44b0b82
 FIRESIM_COMMIT=8176b65
 API_CONFIG_COMMIT=fd8df11
-# the newest one
-ROCKET_DSP_COMMIT=16e26e7
+ROCKET_DSP_COMMIT=16e26e7 # includes ShiftRegisterMem fix
 
 git submodule add https://github.com/ucb-bar/dsptools.git tools/dsptools
 cd tools/dsptools
@@ -40,10 +39,10 @@ cd ../..
 mv build.txt build.sbt
 
 if [ -d project ]; then
-   echo "Directory project already exists"
+   echo "Directory project already exists!"
 else
    mkdir project
 fi
 
 # add plugins
-echo -e 'addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.15.0")\naddSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.21")\naddSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.5.3")' > ./project/plugins.sbt
+echo -e 'addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.15.0")\naddSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.21")\naddSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.5.3")\naddSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.0")\naddSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.9.3")' > ./project/plugins.sbt
