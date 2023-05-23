@@ -9,42 +9,50 @@ import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 import chisel3.internal.requireIsChiselType
 
 case class LISParams[T <: Data: Real](
-  proto: T,
-  LISsize: Int,
-  LISsubType: String = "LIS_FIFO",
-  LIStype: String = "LIS_CNT",
-  rtcSize: Boolean = false,
-  rtcSortDir: Boolean = false,
-  discardPos: Option[Int] = None,
-  flushData: Boolean = false,
-  sendMiddle: Boolean = false,
-  enInitStore: Boolean = true, // in.ready not equal to out.ready during the init data storing
-  useSorterFull: Boolean = false,
+  proto:          T,
+  LISsize:        Int,
+  LISsubType:     String = "LIS_FIFO",
+  LIStype:        String = "LIS_CNT",
+  rtcSize:        Boolean = false,
+  rtcSortDir:     Boolean = false,
+  discardPos:     Option[Int] = None,
+  flushData:      Boolean = false,
+  sendMiddle:     Boolean = false,
+  enInitStore:    Boolean = true, // in.ready not equal to out.ready during the init data storing
+  useSorterFull:  Boolean = false,
   useSorterEmpty: Boolean = false,
-  sortDir: Boolean = true,
-) {
+  sortDir:        Boolean = true) {
 
   final val allowedLISsubTypes = Seq("LIS_FIFO", "LIS_input", "LIS_fixed")
   final val allowedLISTypes = Seq("LIS_CNT", "LIS_SR")
 
-  requireIsChiselType(proto,  s"($proto) must be chisel type")
+  requireIsChiselType(proto, s"($proto) must be chisel type")
 
   def checkLISType() {
-    require(allowedLISTypes.contains(LIStype), s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}""")
+    require(
+      allowedLISTypes.contains(LIStype),
+      s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}"""
+    )
   }
   def checkLISsubType() {
-    require(allowedLISsubTypes.contains(LISsubType), s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}""")
+    require(
+      allowedLISsubTypes.contains(LISsubType),
+      s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}"""
+    )
   }
   def checkLIS_fixedSettings() {
-    require((LISsubType == "LIS_fixed" && !discardPos.isEmpty) || LISsubType != "LIS_fixed" ,s"Position of discarding element must be defined for LIS_fixed linear sorter scheme")
+    require(
+      (LISsubType == "LIS_fixed" && !discardPos.isEmpty) || LISsubType != "LIS_fixed",
+      s"Position of discarding element must be defined for LIS_fixed linear sorter scheme"
+    )
   }
-   def checkDiscardPosition() {
+  def checkDiscardPosition() {
     require((discardPos.getOrElse(0) < LISsize), s"Position of discarding element must be less than sorter size")
   }
 }
 
 //dut.io.flushData.get
-class LISIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
+class LISIO[T <: Data: Real](params: LISParams[T]) extends Bundle {
   val in = Flipped(Decoupled(params.proto))
   val lastIn = Input(Bool())
   val flushData = if (params.flushData) Some(Input(Bool())) else None
@@ -54,16 +62,16 @@ class LISIO[T <: Data: Real] (params: LISParams[T]) extends Bundle {
   val middleData = if (params.sendMiddle && params.LIStype == "LIS_SR") Some(Output(params.proto)) else None
   val sortDir = if (params.rtcSortDir) Some(Input(Bool())) else None
   val sorterFull = if (params.useSorterFull) Some(Output(Bool())) else None
-  val sorterEmpty = if (params.useSorterEmpty) Some (Output(Bool())) else None
-  val lisSize = if (params.rtcSize == true) Some(Input(UInt((log2Up(params.LISsize)+1).W))) else None
+  val sorterEmpty = if (params.useSorterEmpty) Some(Output(Bool())) else None
+  val lisSize = if (params.rtcSize == true) Some(Input(UInt((log2Up(params.LISsize) + 1).W))) else None
   val discardPos = if (params.LISsubType == "LIS_input") Some(Input(UInt(log2Up(params.LISsize).W))) else None
 }
 
 object LISIO {
-  def apply[T <: Data : Real](params: LISParams[T]): LISIO[T] = new LISIO(params)
+  def apply[T <: Data: Real](params: LISParams[T]): LISIO[T] = new LISIO(params)
 }
 
-class LinearSorter [T <: Data: Real] (val params: LISParams[T]) extends Module {
+class LinearSorter[T <: Data: Real](val params: LISParams[T]) extends Module {
   require(params.LISsize > 1, s"Sorter size must be > 1")
   params.checkLISType()
   params.checkLISsubType()
@@ -73,22 +81,21 @@ class LinearSorter [T <: Data: Real] (val params: LISParams[T]) extends Module {
   // module name
   val run_flag = if (params.rtcSize) "on" else "off"
 
-  override def desiredName = params.LIStype + "_" + params.LISsubType + "_size_" + params.LISsize.toString + "_width_" + params.proto.getWidth.toString + "_runtime_" + run_flag
+  override def desiredName =
+    params.LIStype + "_" + params.LISsubType + "_size_" + params.LISsize.toString + "_width_" + params.proto.getWidth.toString + "_runtime_" + run_flag
 
   val io = IO(LISIO(params))
 
   if (params.LIStype == "LIS_CNT") {
     val lisCNT = Module(new LinearSorterCNT(params))
     lisCNT.io <> io
-  }
-  else {
-    val lisSR =  Module(new LinearSorterSR(params))
+  } else {
+    val lisSR = Module(new LinearSorterSR(params))
     lisSR.io <> io
   }
 }
 
-object LISsimpleApp extends App
-{
+object LISsimpleApp extends App {
   val params: LISParams[FixedPoint] = LISParams(
     proto = FixedPoint(16.W, 14.BP),
     LISsize = 8,
@@ -97,11 +104,11 @@ object LISsimpleApp extends App
     rtcSize = false,
     sortDir = true
   )
-  (new ChiselStage).execute(Array("--target-dir", "verilog/LISsimple"), Seq(ChiselGeneratorAnnotation(() =>new  LinearSorter(params))))
+  (new ChiselStage)
+    .execute(Array("--target-dir", "verilog/LISsimple"), Seq(ChiselGeneratorAnnotation(() => new LinearSorter(params))))
 }
 
-object LISApp extends App
-{
+object LISApp extends App {
   implicit def int2bool(b: Int) = if (b == 1) true else false
   if (args.length < 5) {
     println("This application requires at least 5 arguments")
@@ -115,31 +122,37 @@ object LISApp extends App
   val separateVerilog = int2bool(args(6).toInt)
 
   val params: LISParams[FixedPoint] = LISParams(
-    proto = FixedPoint(wordSize.W, (wordSize-2).BP),
+    proto = FixedPoint(wordSize.W, (wordSize - 2).BP),
     LISsize = sorterSize,
     LIStype = sorterType,
     LISsubType = sorterSubType,
-    discardPos = if (sorterSubType == "LIS_fixed") Some(sorterSize/2) else None,
+    discardPos = if (sorterSubType == "LIS_fixed") Some(sorterSize / 2) else None,
     rtcSize = isRunTime,
     rtcSortDir = false,
     sortDir = true
   )
   if (separateVerilog == true) {
     val arguments = Array(
-      "--target-dir", buildDirName,
-      "-e", "verilog",
-      "-X", "verilog",
-      "--log-level", "info"
+      "--target-dir",
+      buildDirName,
+      "-e",
+      "verilog",
+      "-X",
+      "verilog",
+      "--log-level",
+      "info"
     )
-    (new ChiselStage).execute(arguments, Seq(ChiselGeneratorAnnotation(() =>new LinearSorter(params))))
-  }
-  else {
+    (new ChiselStage).execute(arguments, Seq(ChiselGeneratorAnnotation(() => new LinearSorter(params))))
+  } else {
     val arguments = Array(
-      "--target-dir", buildDirName,
-      "-X", "verilog",
-      "--log-level", "info"
+      "--target-dir",
+      buildDirName,
+      "-X",
+      "verilog",
+      "--log-level",
+      "info"
     )
-    (new ChiselStage).execute(arguments, Seq(ChiselGeneratorAnnotation(() =>new LinearSorter(params))))
+    (new ChiselStage).execute(arguments, Seq(ChiselGeneratorAnnotation(() => new LinearSorter(params))))
   }
 
   //chisel3.Driver.execute(args,()=>new LinearSorter(params))

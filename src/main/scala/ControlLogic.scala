@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 
 class PEControlLogicIO extends Bundle {
-  val currCompOut  = Input(Bool())
+  val currCompOut = Input(Bool())
   val leftCompOut = Input(Bool())
   val rightCompOut = Input(Bool())
 

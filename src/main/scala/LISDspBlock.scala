@@ -14,16 +14,17 @@ import freechips.rocketchip.config._
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.regmapper._
 
-/**
-* Can be useful for median streaming calculation
-**/
-
-abstract class LISBlock [T <: Data : Real: BinaryRepresentation, D, U, E, O, B <: Data] (params: LISParams[T], beatBytes: Int) extends LazyModule()(Parameters.empty) with DspBlock[D, U, E, O, B] with HasCSR {
+abstract class LISBlock[T <: Data: Real: BinaryRepresentation, D, U, E, O, B <: Data](
+  params:    LISParams[T],
+  beatBytes: Int)
+    extends LazyModule()(Parameters.empty)
+    with DspBlock[D, U, E, O, B]
+    with HasCSR {
 
   val streamNode = AXI4StreamIdentityNode()
 
   lazy val module = new LazyModuleImp(this) {
-    val (in, _)  = streamNode.in(0)
+    val (in, _) = streamNode.in(0)
     val (out, _) = streamNode.out(0)
 
     val lis = Module(new LinearSorterCNT(params))
@@ -75,35 +76,62 @@ abstract class LISBlock [T <: Data : Real: BinaryRepresentation, D, U, E, O, B <
 
     val fields = Seq(
       // settable registers
-      RegField(1, sortDir,
-        RegFieldDesc(name = "sortDir", desc = "define sorting direction (`true` denotes ascending, `false` denotes descending sorting direction) ")),
-      RegField(log2Ceil(params.LISsize), lisSize,
-        RegFieldDesc(name = "lisSize", desc = "contains lis size which is used for run time configurability control")),
-      RegField(1, flushData,
-        RegFieldDesc(name = "flushData", desc = "trigger data flushing")),
-      RegField(log2Ceil(params.LISsize), discardPos,
-        RegFieldDesc(name = "discardPos", desc = "defines position of the discarding element - used only if LIS_input scheme is used")),
+      RegField(
+        1,
+        sortDir,
+        RegFieldDesc(
+          name = "sortDir",
+          desc = "define sorting direction (`true` denotes ascending, `false` denotes descending sorting direction) "
+        )
+      ),
+      RegField(
+        log2Ceil(params.LISsize),
+        lisSize,
+        RegFieldDesc(name = "lisSize", desc = "contains lis size which is used for run time configurability control")
+      ),
+      RegField(1, flushData, RegFieldDesc(name = "flushData", desc = "trigger data flushing")),
+      RegField(
+        log2Ceil(params.LISsize),
+        discardPos,
+        RegFieldDesc(
+          name = "discardPos",
+          desc = "defines position of the discarding element - used only if LIS_input scheme is used"
+        )
+      ),
       // read-only status registers
-      RegField.r(1, sorterFull,
-        RegFieldDesc(name = "sorterFull", desc = "indicates whether sorter is full or not")),
-      RegField.r(1, sorterEmpty,
-        RegFieldDesc(name = "sorterEmpty", desc = "indicates whether sorter is empty or not"))
+      RegField.r(1, sorterFull, RegFieldDesc(name = "sorterFull", desc = "indicates whether sorter is full or not")),
+      RegField.r(1, sorterEmpty, RegFieldDesc(name = "sorterEmpty", desc = "indicates whether sorter is empty or not"))
     )
     //define abract register map so it can be AXI4, Tilelink, APB, AHB
     regmap(
-      fields.zipWithIndex.map({ case (f, i) =>
+      fields.zipWithIndex.map({
+        case (f, i) =>
           i * beatBytes -> Seq(f)
       }): _*
     )
   }
 }
 
-class AXI4LISBlock[T <: Data : Real: BinaryRepresentation](params: LISParams[T], address: AddressSet, _beatBytes: Int = 4)(implicit p: Parameters) extends LISBlock[T, AXI4MasterPortParameters, AXI4SlavePortParameters, AXI4EdgeParameters, AXI4EdgeParameters, AXI4Bundle](params, _beatBytes) with AXI4DspBlock with AXI4HasCSR {
+class AXI4LISBlock[T <: Data: Real: BinaryRepresentation](
+  params:     LISParams[T],
+  address:    AddressSet,
+  _beatBytes: Int = 4
+)(
+  implicit p: Parameters)
+    extends LISBlock[
+      T,
+      AXI4MasterPortParameters,
+      AXI4SlavePortParameters,
+      AXI4EdgeParameters,
+      AXI4EdgeParameters,
+      AXI4Bundle
+    ](params, _beatBytes)
+    with AXI4DspBlock
+    with AXI4HasCSR {
   val mem = Some(AXI4RegisterNode(address = address, beatBytes = _beatBytes)) // use AXI4 memory mapped
 }
 
-object LISDspBlock extends App
-{
+object LISDspBlock extends App {
   val paramsLIS: LISParams[FixedPoint] = LISParams(
     proto = FixedPoint(16.W, 14.BP),
     LISsize = 8,
@@ -113,8 +141,11 @@ object LISDspBlock extends App
   )
   val baseAddress = 0x500
   implicit val p: Parameters = Parameters.empty
-  val lisModule = LazyModule(new AXI4LISBlock(paramsLIS, AddressSet(baseAddress + 0x100, 0xFF), _beatBytes = 4) with dspblocks.AXI4StandaloneBlock {
-    override def standaloneParams = AXI4BundleParameters(addrBits = 32, dataBits = 32, idBits = 1)
-  })
+  val lisModule = LazyModule(
+    new AXI4LISBlock(paramsLIS, AddressSet(baseAddress + 0x100, 0xff), _beatBytes = 4)
+      with dspblocks.AXI4StandaloneBlock {
+      override def standaloneParams = AXI4BundleParameters(addrBits = 32, dataBits = 32, idBits = 1)
+    }
+  )
   (new ChiselStage).execute(args, Seq(ChiselGeneratorAnnotation(() => lisModule.module)))
 }
