@@ -8,7 +8,7 @@ CHIPYARD_VERSION="1.9.1"
 DSPTOOLS_COMMIT=5b1e733
 ROCKET_COMMIT=25e2c63
 FIRESIM_COMMIT=3ae68ec
-ROCKET_DSP_COMMIT=ef552e7 #milovanovic/rocket-dsp-utils # original rocket-dsp-utils is 4f04a3c
+ROCKET_DSP_COMMIT=886b6d0  #ef552e7 #milovanovic/rocket-dsp-utils # original rocket-dsp-utils is 4f04a3c
 
 git submodule add https://github.com/ucb-bar/dsptools.git tools/dsptools
 cd tools/dsptools
