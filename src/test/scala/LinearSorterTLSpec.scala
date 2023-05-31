@@ -100,11 +100,11 @@ class TLLISTester(
   step(2)
 
   if (dut.params.rtcSize == true) {
-    memWriteWord(csrAddress.base + beatBytes, sorterSize)
+    memWriteWord(csrAddress.base + beatBytes, sorterSize, beatBytes)
   }
 
   if (dut.params.LISsubType == "LIS_input") {
-    memWriteWord(csrAddress.base + 3 * beatBytes, dut.params.LISsize / 2)
+    memWriteWord(csrAddress.base + 3 * beatBytes, dut.params.LISsize / 2, beatBytes)
   }
   step(2)
   poke(dut.in.valid, 1)
