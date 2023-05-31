@@ -14,11 +14,11 @@ The linear insertion sorter is composed of basic processing elements (PEs) conne
 
 Design generator of linear insertion sorters scheme:
 
-![Linear sorters generator scheme](./doc/images/LinearSorterGenerator.svg)
+![Linear sorters generator scheme](./doc/images/svg/LinearSorterGenerator.svg)
 
 Processing elements of two different LIS types:
 
-![Processing elements](./doc/images/ProcessingElements.svg)
+![Processing elements](./doc/images/svg/ProcessingElements.svg)
 
 The Chisel generator is described with following Scala files available inside`src/main/scala` directory:
 
@@ -90,19 +90,30 @@ The following software packages should be installed prior to running this projec
 
 ## Setup
 
-Clone this repository, switch directory and run tests:
+Proposed design generator is intended to be used inside [chipyard](https://github.com/ucb-bar/chipyard) environment as one of the generators located inside `generators/dsp-blocks`. Anyhow, if you want to use this repository standalone then follow instructions below:
+
+*  Clone this repository.
+*  Switch directory.
+*  Initialize all tools and submodules.
+*  Compile code, generate verilog or run tests.
 
 ```
 git clone https://github.com/milovanovic/lis.git
 cd lis
+./init_submodules_and_build_sbt.sh
 sbt test
 ```
 
+#### Note
+The shell script `init_submodules_and_build_sbt.sh`, initializes all tools and generators required to run this project. Besides that, it initializes `bulid.sbt` with all correctly defined dependencies. Versions of tools and generators correspond to chipyard 1.8.1 release. The user can replace versions by changing corresponding checkout commits inside the same script.
+The shell script `remove_submodules.sh` executes commands that reverse the commands listed in `init_submodules_and_build_sbt.sh`.
+
 ## Tests
 
-To run all tests written in Scala simulation environment a user should execute the following command: `testOnly lis.LinearSortersSpec`. Various test cases can be found in `LinearTestersSpec.scala` which is available inside `src/test/scala` directory. Two linear insertion sorter testers are accessible inside `LinearTesters.scala`:
-* `LinearSorterTester` - used for testing design when only compile time configurable parameters are active.
-* `LinearSorterTesterRunTime`  - used for testing proposed design when run time configurable parameters are included.
+To run all tests written in Scala simulation environment a user should execute the following command: `testOnly lis.LinearSortersSpec`. Various test cases can be found in `LinearTestersSpec.scala` which is available inside `src/test/scala` directory. Two LIS testers are accessible inside `LinearTesters.scala`:
+* `LinearSorterTester` - used for testing design when only compile time configurable parameters are set.
+* `LinearSorterTesterRunTime` - used for testing proposed design when run time configurable parameters are included.
+* `LinearSorterTLSpec` - simple test with TileLink memory master model
 
 Tester functions such as `peek`, `poke` and `except`, available inside `DspTester` (check [dsptools Chisel library](http://github.com/ucb-bar/dsptools)), are extensively used for design testing.
 
