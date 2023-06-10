@@ -41,7 +41,7 @@ cd ../..
 mv build.txt build.sbt
 
 if [ -d project ]; then
-   echo "Directory project already exists"
+   echo "Directory project already exists."
 else
    mkdir project
 fi
