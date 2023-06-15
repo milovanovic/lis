@@ -28,25 +28,25 @@ case class LISParams[T <: Data: Real](
 
   requireIsChiselType(proto, s"($proto) must be chisel type")
 
-  def checkLISType() {
+  def checkLISType(): Unit = {
     require(
       allowedLISTypes.contains(LIStype),
       s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}"""
     )
   }
-  def checkLISsubType() {
+  def checkLISsubType(): Unit = {
     require(
       allowedLISsubTypes.contains(LISsubType),
       s"""LIS type must be one of the following: ${allowedLISTypes.mkString(", ")}"""
     )
   }
-  def checkLIS_fixedSettings() {
+  def checkLIS_fixedSettings(): Unit = {
     require(
       (LISsubType == "LIS_fixed" && !discardPos.isEmpty) || LISsubType != "LIS_fixed",
       s"Position of discarding element must be defined for LIS_fixed linear sorter scheme"
     )
   }
-  def checkDiscardPosition() {
+  def checkDiscardPosition(): Unit = {
     require((discardPos.getOrElse(0) < LISsize), s"Position of discarding element must be less than sorter size")
   }
 }
