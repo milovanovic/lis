@@ -4,6 +4,8 @@ generated-rtl/
 *.fir
 *.v
 *.json
+!*input_discard.json
+!*fifo_discard.json
 
 target/
 project/
