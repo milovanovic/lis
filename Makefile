@@ -8,8 +8,8 @@ SBT ?= sbt
 all: clean gen_all_fifo
 
 gen_all_fifo:
-	bash generate_verilog.sh generate_verilog_lis_fifo_sr 0
-	bash generate_verilog.sh generate_verilog_lis_fifo_cnt 0
+	bash scripts/generate_verilog.sh generate_verilog_lis_fifo_sr 0
+	bash scripts/generate_verilog.sh generate_verilog_lis_fifo_cnt 0
 
 
 .PHONY: clean

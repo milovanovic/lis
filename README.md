@@ -21,7 +21,7 @@ Proposed design generator is intended to be used inside [chipyard](https://githu
 ```
 git clone https://github.com/milovanovic/lis.git
 cd lis
-./init_submodules_and_build_sbt.sh
+./scripts/init_submodules_and_build_sbt.sh
 sbt test
 ```
 
@@ -38,13 +38,13 @@ Much more useful information about this work (focused on `LIStype = LIS_CNT` typ
 
 If you are using LIS generator for research, please cite it by the following publication:
 
-    @INPROCEEDINGS{lis,
-   	  author={Petrović, M. L. and Milovanović, V. M.},
-   	  booktitle={2021 IEEE 32nd International Conference on Microelectronics (MIEL)},
-   	  title={A Chisel Generator of Parameterizable and Runtime Reconfigurable Linear Insertion Streaming Sorters},
-   	  year={2021},
-   	  pages={251-254},
-   	  doi={10.1109/MIEL52794.2021.9569153}}
+	@INPROCEEDINGS{lis,
+		author={Petrović, M. L. and Milovanović, V. M.},
+		booktitle={2021 IEEE 32nd International Conference on Microelectronics (MIEL)},
+		title={A Chisel Generator of Parameterizable and Runtime Reconfigurable Linear Insertion Streaming Sorters},
+		year={2021},
+		pages={251-254},
+		doi={10.1109/MIEL52794.2021.9569153}}
 
 ## Guide For New Contributors
 
