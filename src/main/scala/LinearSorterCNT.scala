@@ -1,10 +1,9 @@
 package lis
 
-import chisel3._
 import chisel3.util._
-import dsptools._
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import fixedpoint._
 import dsptools.numbers._
-import chisel3.experimental.FixedPoint
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
 class LinearSorterCNT[T <: Data: Real](val params: LISParams[T]) extends Module {

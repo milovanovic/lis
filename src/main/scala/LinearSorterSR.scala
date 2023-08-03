@@ -1,9 +1,9 @@
 package lis
 
-import chisel3._
 import chisel3.util._
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import fixedpoint._
 import dsptools.numbers._
-import chisel3.experimental.FixedPoint
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 
 class LinearSorterSR[T <: Data: Real](val params: LISParams[T]) extends Module {
@@ -125,7 +125,7 @@ class LinearSorterSR[T <: Data: Real](val params: LISParams[T]) extends Module {
     sortedDataExt := LISnetworkSR.io.nextSortedData
   }
   LISnetworkSR.io.sortedData := sortedDataExt
-  if (params.rtcSize == true) {
+  if (params.rtcSize) {
     LISnetworkSR.io.lisSize.get := io.lisSize.get
   }
 

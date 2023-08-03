@@ -7,5 +7,6 @@ generated-rtl/
 !*input_discard.json
 !*fifo_discard.json
 
+.idea
 target/
 project/

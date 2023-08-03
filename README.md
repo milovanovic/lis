@@ -26,7 +26,7 @@ sbt test
 ```
 
 #### Note
-The shell script `init_submodules_and_build_sbt.sh`, initializes all tools and generators required to run this project. Besides that, it initializes `bulid.sbt` with all correctly defined dependencies. Versions of tools and generators correspond to chipyard 1.9.1 release. The user can replace versions by changing corresponding checkout commits inside the same script.
+The shell script `init_submodules_and_build_sbt.sh`, initializes all tools and generators required to run this project. Besides that, it initializes `bulid.sbt` with all correctly defined dependencies. Versions of tools and generators correspond to newest chipyard with chisel 3.6 version. The user can replace versions by changing corresponding checkout commits inside the same script.
 The shell script `remove_submodules.sh` executes commands that reverse the commands listed in `init_submodules_and_build_sbt.sh`.
 
 ## Documentation

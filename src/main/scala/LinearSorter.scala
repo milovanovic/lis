@@ -1,12 +1,11 @@
 package lis
 
-import chisel3._
 import chisel3.util._
-import dsptools._
 import dsptools.numbers._
-import chisel3.experimental.FixedPoint
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import fixedpoint._
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
-import chisel3.internal.requireIsChiselType
+import chisel3.experimental.requireIsChiselType
 
 case class LISParams[T <: Data: Real](
   proto:          T,
@@ -154,6 +153,4 @@ object LISApp extends App {
     )
     (new ChiselStage).execute(arguments, Seq(ChiselGeneratorAnnotation(() => new LinearSorter(params))))
   }
-
-  //chisel3.Driver.execute(args,()=>new LinearSorter(params))
 }

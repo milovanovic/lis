@@ -2,8 +2,7 @@ package lis
 
 import chisel3._
 import chisel3.util._
-import chisel3.internal.{requireIsChiselType, requireIsHardware}
-import chisel3.experimental.FixedPoint
+import chisel3.experimental.{requireIsChiselType, requireIsHardware}
 
 class CounterWithReset(n: Int, initValue: UInt) {
   require(n >= 0)
@@ -162,8 +161,8 @@ object AdjustableShiftRegister {
     val activeRegs = Wire(Vec(maxDepth, Bool()))
     dontTouch(activeRegs)
     activeRegs.suggestName("activeRegs")
-    activeRegs.zipWithIndex.map {
-      case (active, index) => if (adjust == true) active := (index.U <= depth - 1.U).asBool else active := true.B
+    activeRegs.zipWithIndex.foreach {
+      case (active, index) => if (adjust) active := (index.U <= depth - 1.U).asBool else active := true.B
     }
     //activeRegs.zipWithIndex.map { case (active, index) => active := Mux(depth === 0.U, false.B, (index.U <= depth - 1.U).asBool) }
 

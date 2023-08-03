@@ -1,12 +1,10 @@
 package lis
 
-import chisel3._
 import chisel3.util._
-import chisel3.experimental._
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import fixedpoint._
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
-import dsptools._
 import dsptools.numbers._
-
 import dspblocks._
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.amba.axi4._
@@ -15,6 +13,7 @@ import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.regmapper._
 import freechips.rocketchip.tilelink._
 
+//noinspection TypeAnnotation
 abstract class LISBlock[T <: Data: Real: BinaryRepresentation, D, U, E, O, B <: Data](
   params:    LISParams[T],
   beatBytes: Int)
@@ -47,7 +46,7 @@ abstract class LISBlock[T <: Data: Real: BinaryRepresentation, D, U, E, O, B <: 
     lis.io.out.ready := out.ready
     out.bits.data := lis.io.out.bits.asUInt
 
-    var commonFields = Seq[RegField]()
+    var commonFields: Seq[RegField] = Seq[RegField]()
 
     if (params.rtcSortDir) {
       val sortDir = RegInit(true.B)

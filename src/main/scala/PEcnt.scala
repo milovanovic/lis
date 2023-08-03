@@ -1,10 +1,11 @@
 package lis
 
-import chisel3._
-import chisel3.util._
+import chisel3.util.log2Up
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import fixedpoint._
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
 import dsptools.numbers._
-import chisel3.experimental.FixedPoint
+//import circt.stage.ChiselStage
 
 class PEcntMembers[T <: Data: Real](proto: T, sorterSize: Int) extends Bundle {
   val data = proto
@@ -115,7 +116,6 @@ class PEcnt[T <: Data: Real](val params: LISParams[T], index: Int) extends Modul
 
   val compRes = Mux(io.sortDir.getOrElse(params.sortDir.B), saveCellData < io.inData, saveCellData > io.inData)
 
-  // too long parameter list!
   val (cntLife, discard) = LifeCounter(
     io.enableSort,
     ctrlLogic.io.rstPEregs,
@@ -169,11 +169,9 @@ class PEcnt[T <: Data: Real](val params: LISParams[T], index: Int) extends Modul
 object PEcntApp extends App {
   val params: LISParams[FixedPoint] = LISParams(
     proto = FixedPoint(16.W, 14.BP),
-    LISsize = 64,
-    LISsubType = "LIS_FIFO",
-    rtcSize = false,
-    sortDir = true
+    LISsize = 64
   )
   (new ChiselStage)
     .execute(Array("--target-dir", "verilog/PEcnt"), Seq(ChiselGeneratorAnnotation(() => new PEcnt(params, 2))))
+  //println(ChiselStage.emitSystemVerilog(new PEcnt(params, 2)))
 }

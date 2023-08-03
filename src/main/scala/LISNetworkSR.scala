@@ -1,13 +1,11 @@
 package lis
 
-import chisel3._
 import chisel3.util._
 import chisel3.stage.{ChiselGeneratorAnnotation, ChiselStage}
-import dsptools._
-import dsptools.numbers._
-import chisel3.experimental.FixedPoint
+import chisel3.{fromDoubleToLiteral => _, fromIntToBinaryPoint => _, _}
+import fixedpoint._
 
-import chisel3.internal.requireIsChiselType
+import dsptools.numbers._
 
 class LISNetworkSRIO[T <: Data: Real](params: LISParams[T]) extends Bundle {
   val sortDir = if (params.rtcSortDir) Some(Input(Bool())) else None
@@ -30,7 +28,7 @@ class LISNetworkSR[T <: Data: Real](val params: LISParams[T]) extends Module {
   val xor_outputs = Wire(Vec(params.LISsize, Bool()))
 
   // instatiate all PEsrs
-  elementIndices.map {
+  elementIndices.foreach {
     case (ind) => {
       val lisSRelement = Module(new PEsr(params, ind + 1))
       if (ind == 0) {

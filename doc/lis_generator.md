@@ -92,7 +92,7 @@ The explanation of each parameter is given below:
 
 ## Tests
 
-To run all tests written in Scala simulation environment a user should execute the following command: `testOnly lis.LinearSortersSpec`. Various test cases can be found in `LinearTestersSpec.scala` which is available inside `src/test/scala` directory. Two LIS testers are accessible inside `LinearTesters.scala`:
+To run all tests written in Scala simulation environment a user should execute the following command: `testOnly lis.LinearSorterSpec`. Various test cases can be found in `LinearTestersSpec.scala` which is available inside `src/test/scala` directory. Two LIS testers are accessible inside `LinearTesters.scala`:
 * `LinearSorterTester` - used for testing design when only compile time configurable parameters are set.
 * `LinearSorterTesterRunTime` - used for testing proposed design when run time configurable parameters are included.
 * `LinearSorterTLSpec` - simple test with TileLink memory master model
